@@ -238,8 +238,8 @@ class TestBootstrapping(unittest.TestCase):
 
         # Coeff to slot.
         ciph0, ciph1 = self.evaluator.coeff_to_slot(ciph, rot_keys, conj_key, self.encoder)
-        plain_slots0 = [plain.p.coeffs[i] / ciph.scaling_factor for i in range(num_slots)]
-        plain_slots1 = [plain.p.coeffs[i] / ciph.scaling_factor for i in range(num_slots, 2 * num_slots)]
+        plain_slots0 = [plain.p.coeffs[i] / self.evaluator.scaling_factor for i in range(num_slots)]
+        plain_slots1 = [plain.p.coeffs[i] / self.evaluator.scaling_factor for i in range(num_slots, 2 * num_slots)]
         print("----- COEFF TO SLOT -------")
         print(plain_slots0)
         print(plain_slots1)
@@ -251,7 +251,7 @@ class TestBootstrapping(unittest.TestCase):
         check_complex_vector_approx_eq(decoded1, plain_slots1, error_message="COEFF TO SLOT FAILED")
 
         # Exponentiate.
-        const = ciph.scaling_factor / old_modulus * 2 * math.pi * 1j
+        const = self.evaluator.scaling_factor / old_modulus * 2 * math.pi * 1j
         ciph_exp0 = self.evaluator.exp(ciph0, const, self.relin_key, self.encoder)
         ciph_neg_exp0 = self.evaluator.conjugate(ciph_exp0, conj_key)
         ciph_exp1 = self.evaluator.exp(ciph1, const, self.relin_key, self.encoder)
@@ -300,9 +300,11 @@ class TestBootstrapping(unittest.TestCase):
         sin1 = [(exp1[i] - neg_exp1[i]) / 2 / 1j for i in range(num_slots)]
 
         # Scale sine.
-        const = self.evaluator.create_complex_constant_plain(old_modulus / old_scaling_factor * 0.25 / math.pi / 1j, self.encoder)
+        const = self.evaluator.create_complex_constant_plain(old_modulus / self.evaluator.scaling_factor * 0.25 / math.pi / 1j, self.encoder)
         ciph0 = self.evaluator.multiply_plain(ciph_sin0, const)
         ciph1 = self.evaluator.multiply_plain(ciph_sin1, const)
+        ciph0 = self.evaluator.rescale(ciph0, self.evaluator.scaling_factor)
+        ciph1 = self.evaluator.rescale(ciph1, self.evaluator.scaling_factor)
 
         print("----- SIN -------")
         print(sin0)
@@ -312,13 +314,13 @@ class TestBootstrapping(unittest.TestCase):
         print(sin_check0)
         print(sin_check1)
 
-        scaled_sin0 = [sin0[i] * self.ciph_modulus / self.scaling_factor / 2 / pi for i in range(num_slots)]
-        scaled_sin1 = [sin1[i] * self.ciph_modulus / self.scaling_factor / 2 / pi for i in range(num_slots)]
+        scaled_sin0 = [sin0[i] * self.ciph_modulus / self.evaluator.scaling_factor / 2 / pi for i in range(num_slots)]
+        scaled_sin1 = [sin1[i] * self.ciph_modulus / self.evaluator.scaling_factor / 2 / pi for i in range(num_slots)]
         print("----- SCALED SIN -------")
         print(scaled_sin0)
         print(scaled_sin1)
-        expected_slots0 = [(plain.p.coeffs[i] % self.ciph_modulus) / self.scaling_factor for i in range(num_slots)]
-        expected_slots1 = [(plain.p.coeffs[i] % self.ciph_modulus) / self.scaling_factor for i in range(num_slots, 2 * num_slots)]
+        expected_slots0 = [(plain.p.coeffs[i] % self.ciph_modulus) / self.evaluator.scaling_factor for i in range(num_slots)]
+        expected_slots1 = [(plain.p.coeffs[i] % self.ciph_modulus) / self.evaluator.scaling_factor for i in range(num_slots, 2 * num_slots)]
         print(expected_slots0)
         print(expected_slots1)
 
@@ -332,8 +334,7 @@ class TestBootstrapping(unittest.TestCase):
         # Slot to coeff.
         old_ciph = ciph
         ciph = self.evaluator.slot_to_coeff(ciph0, ciph1, rot_keys, conj_key, self.encoder)
-        #ciph.scaling_factor = old_scaling_factor
-
+        
         prim_root = math.e ** (math.pi * 1j / 2 / num_slots)
         primitive_roots = [prim_root] * (num_slots)
         for i in range(1, num_slots):
@@ -353,11 +354,16 @@ class TestBootstrapping(unittest.TestCase):
             for k in range(1, num_slots):
                 mat_1[i][k] = mat_1[i][k - 1] * primitive_roots[i]
 
-        plain0 = mat.matrix_vector_multiply(mat_0, sin0)
-        plain1 = mat.matrix_vector_multiply(mat_1, sin1)
+        plain0 = mat.matrix_vector_multiply(mat_0, scaled_sin0)
+        plain1 = mat.matrix_vector_multiply(mat_1, scaled_sin1)
         plain = [plain0[i] + plain1[i] for i in range(num_slots)]
+
         print("----- SLOT TO COEFF -----")
         print(plain)
+
+        # Reset scaling factor.
+        self.scaling_factor = old_scaling_factor
+        ciph.scaling_factor = self.scaling_factor
         
         new_plain = self.decryptor.decrypt(ciph)
         new_plain = self.encoder.decode(new_plain)
@@ -390,6 +396,7 @@ class TestBootstrapping(unittest.TestCase):
     
     def test_bootstrap_01(self):
         vec = sample_random_complex_vector(self.degree // 2)
+        self.run_test_bootstrap_steps(vec)
         try:
             self.run_test_bootstrap(vec)
         except:

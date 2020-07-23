@@ -654,11 +654,20 @@ class CKKSEvaluator:
         return ciph
 
     def raise_modulus(self, ciph, encoder):
+        """Raises ciphertext modulus.
 
+        Takes a ciphertext (mod q), and scales it up to mod Q_0. Also increases the scaling factor.
+
+        Args:
+            ciph (Ciphertext): Ciphertext to scale up.
+            encoder (CKKSEncoder): Encoder.
+
+        Returns:
+            Ciphertext for exponential.
+        """
         # Raise scaling factor.
         self.scaling_factor = ciph.modulus * 16
         ciph.scaling_factor = self.scaling_factor
-        encoder.scaling_factor = self.scaling_factor
 
         # Raise ciphertext modulus.
         ciph.modulus = self.big_modulus
@@ -724,14 +733,21 @@ class CKKSEvaluator:
         ciph_sin0 = self.subtract(ciph_exp0, ciph_neg_exp0)
         ciph_sin1 = self.subtract(ciph_exp1, ciph_neg_exp1)
 
-        const = self.create_complex_constant_plain(old_modulus / old_scaling_factor * 0.25 / math.pi / 1j, encoder)
-        ciph0 = self.multiply_plain(ciph_sin0, const)
-        ciph1 = self.multiply_plain(ciph_sin1, const)
+        # Scale answer.
+        plain_const = self.create_complex_constant_plain(
+            old_modulus / self.scaling_factor * 0.25 / math.pi / 1j, encoder)
+        ciph0 = self.multiply_plain(ciph_sin0, plain_const)
+        ciph1 = self.multiply_plain(ciph_sin1, plain_const)
+        ciph0 = self.rescale(ciph0, self.scaling_factor)
+        ciph1 = self.rescale(ciph1, self.scaling_factor)
 
         # Slot to coeff.
         old_ciph = ciph
         ciph = self.slot_to_coeff(ciph0, ciph1, rot_keys, conj_key, encoder)
-        #ciph.scaling_factor = old_scaling_factor
+
+        # Reset scaling factor.
+        self.scaling_factor = old_scaling_factor
+        ciph.scaling_factor = self.scaling_factor
 
         print("------------ BOOTSTRAPPING MODULUS CHANGES -------------")
         print("Old modulus q: %d bits" % (int(math.log(old_modulus, 2))))
