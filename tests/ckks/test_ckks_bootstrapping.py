@@ -396,7 +396,6 @@ class TestBootstrapping(unittest.TestCase):
     
     def test_bootstrap_01(self):
         vec = sample_random_complex_vector(self.degree // 2)
-        self.run_test_bootstrap_steps(vec)
         try:
             self.run_test_bootstrap(vec)
         except:
