@@ -83,7 +83,7 @@ def main():
     '''
     ciph_modulus = 0x3fffffff000001
 
-    params = Parameters(poly_degree, plain_modulus, ciph_modulus)
+    params = BFVParameters(poly_degree, plain_modulus, ciph_modulus)
 
     # Print the parameters that we have chosen.
     params.print_parameters()
