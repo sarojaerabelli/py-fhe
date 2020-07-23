@@ -22,21 +22,35 @@ class CKKSBootstrappingContext:
         """Generates private/public key pair for CKKS scheme.
 
         Args:
-            params (Parameters): Parameters including polynomial degree,
+            params (CKKSParameters): Parameters including polynomial degree,
                 ciphertext modulus, etc.
         """
         self.poly_degree = params.poly_degree
         self.old_modulus = params.ciph_modulus
         self.generate_encoding_matrices()
 
+    def get_primitive_root(self, index):
+        """Returns the ith out of the n roots of unity, where n is the number of slots.
+
+        Args:
+            index (int): Index i to specify.
+
+        Returns:
+            The ith out of nth root of unity.
+        """
+        num_slots = self.poly_degree // 2
+        angle = math.pi * index / 2 / num_slots
+        return complex(math.cos(angle), math.sin(angle))
+
     def generate_encoding_matrices(self):
         """Generates encoding matrices for coeff_to_slot and slot_to_coeff operations.
         """
         num_slots = self.poly_degree // 2
-        prim_root = math.e ** (math.pi * 1j / 2 / num_slots)
-        primitive_roots = [prim_root] * num_slots
-        for i in range(1, num_slots):
-            primitive_roots[i] = primitive_roots[i - 1] ** 5
+        primitive_roots = [0] * num_slots
+        power = 1
+        for i in range(num_slots):
+            primitive_roots[i] = self.get_primitive_root(power)
+            power = (power * 5) % (2 * self.poly_degree)
 
         # Compute matrices for slot to coeff transformation.
         self.encoding_mat0 = [[1] * num_slots for _ in range(num_slots)]
@@ -52,6 +66,8 @@ class CKKSBootstrappingContext:
         for i in range(num_slots):
             for k in range(1, num_slots):
                 self.encoding_mat1[i][k] = self.encoding_mat1[i][k - 1] * primitive_roots[i]
+
+
 
         # Compute matrices for coeff to slot transformation.
         self.encoding_mat_transpose0 = util.matrix_operations.transpose_matrix(self.encoding_mat0)

@@ -434,17 +434,21 @@ class CKKSEvaluator:
             Two Ciphertexts which are transformed.
         """
         # Compute new ciphertexts.
-        s1 = self.multiply_matrix(ciph, self.bootstrapping_context.encoding_mat_conj_transpose0, rot_keys, encoder)
+        s1 = self.multiply_matrix(ciph, self.bootstrapping_context.encoding_mat_conj_transpose0,
+                                  rot_keys, encoder)
         s2 = self.conjugate(ciph, conj_key)
-        s2 = self.multiply_matrix(s2, self.bootstrapping_context.encoding_mat_transpose0, rot_keys, encoder)
+        s2 = self.multiply_matrix(s2, self.bootstrapping_context.encoding_mat_transpose0, rot_keys,
+                                  encoder)
         ciph0 = self.add(s1, s2)
         constant = self.create_constant_plain(1 / self.degree)
         ciph0 = self.multiply_plain(ciph0, constant)
         ciph0 = self.rescale(ciph0, self.scaling_factor)
 
-        s1 = self.multiply_matrix(ciph, self.bootstrapping_context.encoding_mat_conj_transpose1, rot_keys, encoder)
+        s1 = self.multiply_matrix(ciph, self.bootstrapping_context.encoding_mat_conj_transpose1,
+                                  rot_keys, encoder)
         s2 = self.conjugate(ciph, conj_key)
-        s2 = self.multiply_matrix(s2, self.bootstrapping_context.encoding_mat_transpose1, rot_keys, encoder)
+        s2 = self.multiply_matrix(s2, self.bootstrapping_context.encoding_mat_transpose1, rot_keys,
+                                  encoder)
         ciph1 = self.add(s1, s2)
         ciph1 = self.multiply_plain(ciph1, constant)
         ciph1 = self.rescale(ciph1, self.scaling_factor)
@@ -467,8 +471,10 @@ class CKKSEvaluator:
         Returns:
             Ciphertext which is transformed.
         """
-        s1 = self.multiply_matrix(ciph0, self.bootstrapping_context.encoding_mat0, rot_keys, encoder)
-        s2 = self.multiply_matrix(ciph1, self.bootstrapping_context.encoding_mat1, rot_keys, encoder)
+        s1 = self.multiply_matrix(ciph0, self.bootstrapping_context.encoding_mat0, rot_keys,
+                                  encoder)
+        s2 = self.multiply_matrix(ciph1, self.bootstrapping_context.encoding_mat1, rot_keys,
+                                  encoder)
         ciph = self.add(s1, s2)
 
         return ciph

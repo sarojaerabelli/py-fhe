@@ -53,19 +53,19 @@ def root_of_unity(order, modulus):
     Finds a root of unity with the given order in the given prime modulus.
 
     Args:
-        order (int): Order n of the root of unity (an nth root of unity).   
+        order (int): Order n of the root of unity (an nth root of unity).
         modulus (int): Modulus to find the root of unity in. Note: MUST BE
             PRIME
 
     Returns:
         A root of unity with the given order in the given modulus.
     """
-    if (((modulus - 1) % order) != 0):
+    if ((modulus - 1) % order) != 0:
         raise ValueError('Must have order q | m - 1, where m is the modulus. \
             The values m = ' + str(modulus) + ' and q = ' + str(order) + ' do not satisfy this.')
 
     generator = find_generator(modulus)
-    if generator == None:
+    if generator is None:
         raise ValueError('No primitive root of unity mod m = ' + str(modulus))
 
     result = mod_exp(generator, (modulus - 1)//order, modulus)

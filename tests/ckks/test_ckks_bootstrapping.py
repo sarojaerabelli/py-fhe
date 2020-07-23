@@ -3,6 +3,7 @@
 import math
 import cmath
 import os
+import time
 import unittest
 
 from ckks.ckks_decryptor import CKKSDecryptor
@@ -185,7 +186,7 @@ class TestBootstrappingMethods(unittest.TestCase):
 class TestBootstrapping(unittest.TestCase):
 
     def setUp(self):
-        self.degree = 16
+        self.degree = 32
         self.ciph_modulus = 1 << 40
         self.big_modulus = 1 << 1200
         self.scaling_factor = 1 << 30
@@ -221,7 +222,7 @@ class TestBootstrapping(unittest.TestCase):
         # Raise modulus.
         old_modulus = ciph.modulus
         old_scaling_factor = self.scaling_factor
-        self.evaluator.raise_modulus(ciph, self.encoder)
+        self.evaluator.raise_modulus(ciph)
 
         print(message)
         print("-----------------------")
@@ -350,40 +351,12 @@ class TestBootstrapping(unittest.TestCase):
         # Slot to coeff.
         ciph = self.evaluator.slot_to_coeff(ciph0, ciph1, rot_keys, self.encoder)
 
-        prim_root = math.e ** (math.pi * 1j / 2 / num_slots)
-        primitive_roots = [prim_root] * (num_slots)
-        for i in range(1, num_slots):
-            primitive_roots[i] = primitive_roots[i - 1] ** 5
-
-        mat_0 = [[1] * num_slots for _ in range(num_slots)]
-        mat_1 = [[1] * num_slots for _ in range(num_slots)]
-
-        for i in range(num_slots):
-            for k in range(1, num_slots):
-                mat_0[i][k] = mat_0[i][k - 1] * primitive_roots[i]
-
-        for i in range(num_slots):
-            mat_1[i][0] = mat_0[i][-1] * primitive_roots[i]
-
-        for i in range(num_slots):
-            for k in range(1, num_slots):
-                mat_1[i][k] = mat_1[i][k - 1] * primitive_roots[i]
-
-        plain0 = mat.matrix_vector_multiply(mat_0, scaled_sin0)
-        plain1 = mat.matrix_vector_multiply(mat_1, scaled_sin1)
-        plain = [plain0[i] + plain1[i] for i in range(num_slots)]
-
-        print("----- SLOT TO COEFF -----")
-        print(plain)
-
         # Reset scaling factor.
         self.scaling_factor = old_scaling_factor
         ciph.scaling_factor = self.scaling_factor
 
         new_plain = self.decryptor.decrypt(ciph)
-        new_plain = self.encoder.decode(new_plain)
-        check_complex_vector_approx_eq(plain, new_plain, error=0.05,
-                                       error_message="SLOT TO COEFF FAILED")
+        new_plain = self.encoder.decode(new_plain)\
 
         print("-------- ANSWER -------")
         print(new_plain)
@@ -418,6 +391,19 @@ class TestBootstrapping(unittest.TestCase):
             self.run_test_bootstrap(vec)
         except Exception:
             self.run_test_bootstrap_steps(vec)
+
+    def test_bootstrap_time(self):
+        num_iterations = 5
+        print("Number of bootstraps: %d" % (num_iterations))
+        total_time = 0
+
+        for _ in range(num_iterations):
+            vec = sample_random_complex_vector(self.degree // 2)
+            start_time = time.clock()
+            self.run_test_bootstrap(vec)
+            total_time += time.clock() - start_time
+
+        print("Average time per bootstrap operation: %f seconds" % (total_time / num_iterations))
 
 if __name__ == '__main__':
     res = unittest.main(verbosity=3, exit=False)

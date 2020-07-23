@@ -41,7 +41,7 @@ class CKKSEncoder:
 
         # FFT inverse.
         to_scale = self.fft.emb_inv(values)
-
+        
         # Multiply by scaling factor, and split up real and imaginary parts.
         message = [0] * plain_len
         for i in range(num_values):

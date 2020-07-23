@@ -20,7 +20,7 @@ TEST_DIRECTORY = os.path.dirname(__file__)
 
 class TestEncryptDecrypt(unittest.TestCase):
     def setUp(self):
-        self.degree = 16
+        self.degree = 64
         self.ciph_modulus = 1 << 1200
         self.big_modulus = 1 << 1200
         self.scaling_factor = 1 << 30
