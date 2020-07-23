@@ -44,5 +44,15 @@ class TestMatrixOperations(unittest.TestCase):
         rot = matrix_operations.rotate(vec, 3)
         self.assertEqual(rot, [3, 4, 5, 6, 7, 8, 0, 1, 2])
 
+    def test_conjugate_matrix(self):
+        mat = [[1j, 1 + 2j, 2 + 3j], [1, 4 - 4j, 10 - 1j], [-5, 6 + 4j, 10 - 2j]]
+        conjugated_mat = matrix_operations.conjugate_matrix(mat)
+        self.assertEqual(conjugated_mat, [[-1j, 1 - 2j, 2 - 3j], [1, 4 + 4j, 10 + 1j], [-5, 6 - 4j, 10 + 2j]])
+
+    def test_transpose_matrix(self):
+        mat = [[0, 1, 2], [1, 4, 10]]
+        transpose = matrix_operations.transpose_matrix(mat)
+        self.assertEqual(transpose, [[0, 1], [1, 4], [2, 10]])
+
 if __name__ == '__main__':
     res = unittest.main(verbosity=3, exit=False)

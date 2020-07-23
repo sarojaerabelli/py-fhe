@@ -3,6 +3,7 @@
 from math import sqrt
 import math
 
+from ckks.ckks_bootstrapping_context import CKKSBootstrappingContext
 from util.ciphertext import Ciphertext
 import util.matrix_operations
 from util.plaintext import Plaintext
@@ -18,7 +19,7 @@ class CKKSEvaluator:
         degree (int): Polynomial degree of ring.
         big_modulus (int): Modulus q of coefficients of polynomial
             ring R_q.
-        scaling_factor (float): Scaling factor.
+        scaling_factor (float): Scaling factor to encode new plaintexts with.
     """
 
     def __init__(self, params):
@@ -31,6 +32,7 @@ class CKKSEvaluator:
         self.degree = params.poly_degree
         self.big_modulus = params.big_modulus
         self.scaling_factor = params.scaling_factor
+        self.bootstrapping_context = CKKSBootstrappingContext(params)
 
     def add(self, ciph1, ciph2):
         """Adds two ciphertexts.
@@ -369,7 +371,7 @@ class CKKSEvaluator:
         """Rescales a ciphertext to a new scaling factor.
 
         Divides ciphertext by division factor, and updates scaling factor
-        and ciphertext. modulus.
+        and ciphertext modulus.
 
         Args:
             ciph (Ciphertext): Ciphertext to modify.
@@ -431,51 +433,25 @@ class CKKSEvaluator:
         Returns:
             Two Ciphertexts which are transformed.
         """
-
-        # Compute primitive roots.
-        prim_root = math.e ** (math.pi * 1j / self.degree)
-        primitive_roots = [prim_root] * (self.degree // 2)
-        for i in range(1, self.degree // 2):
-            primitive_roots[i] = primitive_roots[i - 1] ** 5
-
-        # Compute matrices for coeff to slot transformation.
-        mat_0_transpose = [[1] * (self.degree // 2) for _ in range(self.degree // 2)]
-        mat_0_conj_transpose = [[1] * (self.degree // 2) for _ in range(self.degree // 2)]
-        mat_1_transpose = [[1] * (self.degree // 2) for _ in range(self.degree // 2)]
-        mat_1_conj_transpose = [[1] * (self.degree // 2) for _ in range(self.degree // 2)]
-
-        for i in range(1, self.degree // 2):
-            for k in range(self.degree // 2):
-                mat_0_transpose[i][k] = mat_0_transpose[i - 1][k] * primitive_roots[k]
-                mat_0_conj_transpose[i][k] = mat_0_transpose[i][k].conjugate()
-
-        mat_1_transpose[0] = [mat_0_transpose[-1][k] * primitive_roots[k] for k in range(self.degree // 2)]
-        mat_1_conj_transpose[0] = [m.conjugate() for m in mat_1_transpose[0]]
-
-        for i in range(1, self.degree // 2):
-            for k in range(self.degree // 2):
-                mat_1_transpose[i][k] = mat_1_transpose[i - 1][k] * primitive_roots[k]
-                mat_1_conj_transpose[i][k] = mat_1_transpose[i][k].conjugate()
-
         # Compute new ciphertexts.
-        s1 = self.multiply_matrix(ciph, mat_0_conj_transpose, rot_keys, encoder)
+        s1 = self.multiply_matrix(ciph, self.bootstrapping_context.encoding_mat_conj_transpose0, rot_keys, encoder)
         s2 = self.conjugate(ciph, conj_key)
-        s2 = self.multiply_matrix(s2, mat_0_transpose, rot_keys, encoder)
+        s2 = self.multiply_matrix(s2, self.bootstrapping_context.encoding_mat_transpose0, rot_keys, encoder)
         ciph0 = self.add(s1, s2)
         constant = self.create_constant_plain(1 / self.degree)
         ciph0 = self.multiply_plain(ciph0, constant)
         ciph0 = self.rescale(ciph0, self.scaling_factor)
 
-        s1 = self.multiply_matrix(ciph, mat_1_conj_transpose, rot_keys, encoder)
+        s1 = self.multiply_matrix(ciph, self.bootstrapping_context.encoding_mat_conj_transpose1, rot_keys, encoder)
         s2 = self.conjugate(ciph, conj_key)
-        s2 = self.multiply_matrix(s2, mat_1_transpose, rot_keys, encoder)
+        s2 = self.multiply_matrix(s2, self.bootstrapping_context.encoding_mat_transpose1, rot_keys, encoder)
         ciph1 = self.add(s1, s2)
         ciph1 = self.multiply_plain(ciph1, constant)
         ciph1 = self.rescale(ciph1, self.scaling_factor)
 
         return ciph0, ciph1
 
-    def slot_to_coeff(self, ciph0, ciph1, rot_keys, conj_key, encoder):
+    def slot_to_coeff(self, ciph0, ciph1, rot_keys, encoder):
         """Takes plaintext slots and puts into ciphertext coefficients.
 
         Takes encryptions of (t_0, t_1, ..., t_(n/2)) and (t_(n/2 + 1), ..., t_(n-1))
@@ -485,105 +461,15 @@ class CKKSEvaluator:
         Args:
             ciph0 (Ciphertext): First ciphertext to transform.
             ciph1 (Ciphertext): Second ciphertext to transform.
-            rot_keys (dict (RotationKey)): Rotation keys
-            conj_key (PublicKey): Conjugation key.
+            rot_keys (dict (RotationKey)): Rotation keys.
             encoder (CKKSEncoder): Encoder for CKKS.
 
         Returns:
             Ciphertext which is transformed.
         """
-
-        # Compute primitive roots.
-        prim_root = math.e ** (math.pi * 1j / self.degree)
-        primitive_roots = [prim_root] * (self.degree // 2)
-        for i in range(1, self.degree // 2):
-            primitive_roots[i] = primitive_roots[i - 1] ** 5
-
-        # Comopute matrices for slot to coeff transformation.
-        mat_0 = [[1] * (self.degree // 2) for _ in range(self.degree // 2)]
-        mat_1 = [[1] * (self.degree // 2) for _ in range(self.degree // 2)]
-
-        for i in range(self.degree // 2):
-            for k in range(1, self.degree // 2):
-                mat_0[i][k] = mat_0[i][k - 1] * primitive_roots[i]
-
-        for i in range(self.degree // 2):
-            mat_1[i][0] = mat_0[i][-1] * primitive_roots[i]
-
-        for i in range(self.degree // 2):
-            for k in range(1, self.degree // 2):
-                mat_1[i][k] = mat_1[i][k - 1] * primitive_roots[i]
-
-        # Compute new ciphertexts.
-        s1 = self.multiply_matrix(ciph0, mat_0, rot_keys, encoder)
-        s2 = self.multiply_matrix(ciph1, mat_1, rot_keys, encoder)
+        s1 = self.multiply_matrix(ciph0, self.bootstrapping_context.encoding_mat0, rot_keys, encoder)
+        s2 = self.multiply_matrix(ciph1, self.bootstrapping_context.encoding_mat1, rot_keys, encoder)
         ciph = self.add(s1, s2)
-
-        return ciph
-
-    def exp2pi(self, ciph, relin_key, encoder):
-        """Evaluates the exponential function on the ciphertext.
-
-        Takes an encryption of m and returns an encryption of e^(2 * pi * m).
-
-        Args:
-            ciph (Ciphertext): Ciphertext to transform.
-            relin_key (PublicKey): Relinearization key.
-            encoder (CKKSEncoder): Encoder.
-
-        Returns:
-            Ciphertext for exponential.
-        """
-        ciph2 = self.multiply(ciph, ciph, relin_key)
-        ciph2 = self.rescale(ciph2, self.scaling_factor)
-
-        ciph4 = self.multiply(ciph2, ciph2, relin_key)
-        ciph4 = self.rescale(ciph4, self.scaling_factor)
-
-        const = self.create_constant_plain(1 / 2 / math.pi)
-        ciph01 = self.add_plain(ciph, const)
-
-        const = self.create_constant_plain(2 * math.pi)
-        ciph01 = self.multiply_plain(ciph01, const)
-        ciph01 = self.rescale(ciph01, self.scaling_factor)
-
-        const = self.create_constant_plain(3 / 2 / math.pi)
-        ciph23 = self.add_plain(ciph, const)
-
-        const = self.create_constant_plain(4 * (math.pi ** 3) / 3)
-        ciph23 = self.multiply_plain(ciph23, const)
-        ciph23 = self.rescale(ciph23, self.scaling_factor)
-
-        ciph23 = self.multiply(ciph23, ciph2, relin_key)
-        ciph23 = self.rescale(ciph23, self.scaling_factor)
-        ciph01 = self.lower_modulus(ciph01, self.scaling_factor)
-        ciph23 = self.add(ciph23, ciph01)
-
-        const = self.create_constant_plain(5 / 2 / math.pi)
-        ciph45 = self.add_plain(ciph, const)
-
-        const = self.create_constant_plain(4 * (math.pi ** 5) / 15)
-        ciph45 = self.multiply_plain(ciph45, const)
-        ciph45 = self.rescale(ciph45, self.scaling_factor)
-
-        const = self.create_constant_plain(7 / 2 / math.pi)
-        ciph = self.add_plain(ciph, const)
-
-        const = self.create_constant_plain(8 * (math.pi ** 7) / 315)
-        ciph = self.multiply_plain(ciph, const)
-        ciph = self.rescale(ciph, self.scaling_factor)
-
-        ciph = self.multiply(ciph, ciph2, relin_key)
-        ciph = self.rescale(ciph, self.scaling_factor)
-
-        ciph45 = self.lower_modulus(ciph45, self.scaling_factor)
-        ciph = self.add(ciph, ciph45)
-
-        ciph = self.multiply(ciph, ciph4, relin_key)
-        ciph = self.rescale(ciph, self.scaling_factor)
-
-        ciph23 = self.lower_modulus(ciph23, self.scaling_factor)
-        ciph = self.add(ciph, ciph23)
 
         return ciph
 
@@ -653,14 +539,13 @@ class CKKSEvaluator:
 
         return ciph
 
-    def raise_modulus(self, ciph, encoder):
+    def raise_modulus(self, ciph):
         """Raises ciphertext modulus.
 
         Takes a ciphertext (mod q), and scales it up to mod Q_0. Also increases the scaling factor.
 
         Args:
             ciph (Ciphertext): Ciphertext to scale up.
-            encoder (CKKSEncoder): Encoder.
 
         Returns:
             Ciphertext for exponential.
@@ -717,7 +602,7 @@ class CKKSEvaluator:
         # Raise modulus.
         old_modulus = ciph.modulus
         old_scaling_factor = self.scaling_factor
-        self.raise_modulus(ciph, encoder)
+        self.raise_modulus(ciph)
 
         # Coeff to slot.
         ciph0, ciph1 = self.coeff_to_slot(ciph, rot_keys, conj_key, encoder)
@@ -743,7 +628,7 @@ class CKKSEvaluator:
 
         # Slot to coeff.
         old_ciph = ciph
-        ciph = self.slot_to_coeff(ciph0, ciph1, rot_keys, conj_key, encoder)
+        ciph = self.slot_to_coeff(ciph0, ciph1, rot_keys, encoder)
 
         # Reset scaling factor.
         self.scaling_factor = old_scaling_factor
