@@ -186,7 +186,7 @@ class TestBootstrappingMethods(unittest.TestCase):
 class TestBootstrapping(unittest.TestCase):
 
     def setUp(self):
-        self.degree = 32
+        self.degree = 16
         self.ciph_modulus = 1 << 40
         self.big_modulus = 1 << 1200
         self.scaling_factor = 1 << 30

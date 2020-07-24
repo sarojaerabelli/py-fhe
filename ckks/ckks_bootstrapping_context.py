@@ -66,10 +66,10 @@ class CKKSBootstrappingContext:
             for k in range(1, num_slots):
                 self.encoding_mat1[i][k] = self.encoding_mat1[i][k - 1] * primitive_roots[i]
 
-
-
         # Compute matrices for coeff to slot transformation.
         self.encoding_mat_transpose0 = util.matrix_operations.transpose_matrix(self.encoding_mat0)
-        self.encoding_mat_conj_transpose0 = util.matrix_operations.conjugate_matrix(self.encoding_mat_transpose0)
+        self.encoding_mat_conj_transpose0 = util.matrix_operations.conjugate_matrix(
+            self.encoding_mat_transpose0)
         self.encoding_mat_transpose1 = util.matrix_operations.transpose_matrix(self.encoding_mat1)
-        self.encoding_mat_conj_transpose1 = util.matrix_operations.conjugate_matrix(self.encoding_mat_transpose1)
+        self.encoding_mat_conj_transpose1 = util.matrix_operations.conjugate_matrix(
+            self.encoding_mat_transpose1)

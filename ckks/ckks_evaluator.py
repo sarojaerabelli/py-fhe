@@ -557,7 +557,7 @@ class CKKSEvaluator:
             Ciphertext for exponential.
         """
         # Raise scaling factor.
-        self.scaling_factor = ciph.modulus * 16
+        self.scaling_factor = ciph.modulus
         ciph.scaling_factor = self.scaling_factor
 
         # Raise ciphertext modulus.

@@ -22,14 +22,14 @@ class CKKSEncoder:
                 plaintext modulus, and ciphertext modulus.
         """
         self.degree = params.poly_degree
-        self.fft = FFTContext(1 << 17)  
+        self.fft = FFTContext(1 << 17)
 
     def encode(self, values, scaling_factor):
         """Encodes complex numbers into a polynomial.
 
         Encodes an array of complex number into a polynomial.
 
-        Args: 
+        Args:
             values (list): List of complex numbers to encode.
             scaling_factor (float): Scaling factor to multiply by.
 
@@ -41,7 +41,7 @@ class CKKSEncoder:
 
         # FFT inverse.
         to_scale = self.fft.emb_inv(values)
-        
+
         # Multiply by scaling factor, and split up real and imaginary parts.
         message = [0] * plain_len
         for i in range(num_values):
@@ -49,30 +49,30 @@ class CKKSEncoder:
             message[i + num_values] = int(to_scale[i].imag * scaling_factor + 0.5)
 
         return Plaintext(Polynomial(plain_len, message), scaling_factor)
-        
+
 
     def decode(self, plain):
         """Decodes a plaintext polynomial.
 
         Decodes a plaintext polynomial back to a list of integers.
 
-        Args: 
+        Args:
             plain (Plaintext): Plaintext to decode.
 
         Returns:
             A decoded list of integers.
         """
-        if (not isinstance(plain, Plaintext)):
+        if not isinstance(plain, Plaintext):
             raise ValueError("Input to decode must be a Plaintext")
 
         plain_len = len(plain.p.coeffs)
         num_values = plain_len >> 1
 
         # Divide by scaling factor, and turn back into a complex number.
-        to_scale_down = [0] * num_values
+        message = [0] * num_values
         for i in range(num_values):
-            to_scale_down[i] = complex(plain.p.coeffs[i] / plain.scaling_factor,
-                                       plain.p.coeffs[i + num_values] / plain.scaling_factor)
+            message[i] = complex(plain.p.coeffs[i] / plain.scaling_factor,
+                                 plain.p.coeffs[i + num_values] / plain.scaling_factor)
 
         # Forward FFT.
-        return self.fft.emb(to_scale_down)
+        return self.fft.emb(message)

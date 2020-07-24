@@ -43,8 +43,9 @@ class NTTContext:
         self.coeff_modulus = coeff_modulus
         self.degree = poly_degree
         if not root_of_unity:
-            # We use the (2d)-th root of unity, since d of these are roots of x^d + 1, which can be used
-            # to uniquely identify any polynomial mod x^d + 1 from the CRT representation of x^d + 1.
+            # We use the (2d)-th root of unity, since d of these are roots of x^d + 1, which can be
+            # used to uniquely identify any polynomial mod x^d + 1 from the CRT representation of
+            # x^d + 1.
             root_of_unity = nbtheory.root_of_unity(order=2 * poly_degree, modulus=coeff_modulus)
 
         self.precompute_ntt(root_of_unity)
@@ -62,19 +63,22 @@ class NTTContext:
         # Find powers of root of unity.
         self.roots_of_unity = [1] * self.degree
         for i in range(1, self.degree):
-            self.roots_of_unity[i] = (self.roots_of_unity[i - 1] * root_of_unity) % self.coeff_modulus
+            self.roots_of_unity[i] = \
+                (self.roots_of_unity[i - 1] * root_of_unity) % self.coeff_modulus
 
         # Find powers of inverse root of unity.
         root_of_unity_inv = nbtheory.mod_inv(root_of_unity, self.coeff_modulus)
         self.roots_of_unity_inv = [1] * self.degree
         for i in range(1, self.degree):
-            self.roots_of_unity_inv[i] = (self.roots_of_unity_inv[i - 1] * root_of_unity_inv) % self.coeff_modulus
+            self.roots_of_unity_inv[i] = \
+                (self.roots_of_unity_inv[i - 1] * root_of_unity_inv) % self.coeff_modulus
 
         # Scale powers of inverse root of unity by 1/d for the inverse FTT computation.
         poly_degree_inv = nbtheory.mod_inv(self.degree, self.coeff_modulus)
         self.scaled_rou_inv = [0] * self.degree
         for i in range(self.degree):
-            self.scaled_rou_inv[i] = (poly_degree_inv * self.roots_of_unity_inv[i]) % self.coeff_modulus
+            self.scaled_rou_inv[i] = \
+                (poly_degree_inv * self.roots_of_unity_inv[i]) % self.coeff_modulus
 
         # Compute precomputed array of reversed bits for iterated NTT.
         self.reversed_bits = [0] * self.degree
@@ -161,10 +165,10 @@ class NTTContext:
         to_scale_down = self.ntt(coeffs=coeffs, rou=self.roots_of_unity_inv)
 
         # We scale down the FTT output given in the FTT paper.
-        to_scale_down = [(int(to_scale_down[i]) * self.scaled_rou_inv[i]) % self.coeff_modulus
-                         for i in range(num_coeffs)]
+        result = [(int(to_scale_down[i]) * self.scaled_rou_inv[i]) % self.coeff_modulus
+                  for i in range(num_coeffs)]
 
-        return to_scale_down
+        return result
 
 
 class FFTContext:
@@ -174,36 +178,38 @@ class FFTContext:
     to perform FFT.
 
     Attributes:
-        M (int): Length of the FFT vector.
+        fft_length (int): Length of the FFT vector. This must be twice the polynomial degree.
         roots_of_unity (list): The ith member of the list is w^i, where w
             is a root of unity.
-        rot_group (list): Used for EMB only. Value at index i is 5i (mod M)
-            for 0 <= i < M / 4.
+        rot_group (list): Used for EMB only. Value at index i is 5i (mod fft_length)
+            for 0 <= i < fft_length / 4.
         reversed_bits (list): The ith member of the list is the bits of i
             reversed, used in the iterative implementation of FFT.
     """
-    def __init__(self, M):
+    def __init__(self, fft_length):
         """Inits FFTContext with a length for the FFT vector.
 
         Args:
-            M (int): Length of the FFT vector.
+            fft_length (int): Length of the FFT vector.
         """
-        self.M = M
-        self.roots_of_unity = [complex(0, 0)] * (M + 1)
-        for i in range(M + 1):
-            angle = 2 * pi * i / M
+        self.fft_length = fft_length
+        self.roots_of_unity = [0] * (fft_length)
+        self.roots_of_unity_inv = [0] * (fft_length)
+        for i in range(fft_length):
+            angle = 2 * pi * i / fft_length
             self.roots_of_unity[i] = complex(cos(angle), sin(angle))
+            self.roots_of_unity_inv[i] = complex(cos(-angle), sin(-angle))
 
-        Nh = M // 4
-        self.rot_group = [1] * Nh
-        for i in range(1, Nh):
-            self.rot_group[i] = (5 * self.rot_group[i - 1]) % M
+        num_slots = fft_length // 4
+        self.rot_group = [1] * num_slots
+        for i in range(1, num_slots):
+            self.rot_group[i] = (5 * self.rot_group[i - 1]) % fft_length
 
         # Compute precomputed array of reversed bits for iterated FFT.
-        self.reversed_bits = [0] * Nh
-        width = int(log(Nh, 2))
-        for i in range(Nh):
-            self.reversed_bits[i] = reverse_bits(i, width) % Nh
+        self.reversed_bits = [0] * num_slots
+        width = int(log(num_slots, 2))
+        for i in range(num_slots):
+            self.reversed_bits[i] = reverse_bits(i, width) % num_slots
 
     def fft(self, coeffs, rou):
         """Runs FFT on the given coefficients.
@@ -221,8 +227,8 @@ class FFTContext:
             List of transformed coefficients.
         """
         num_coeffs = len(coeffs)
-        assert len(rou) == num_coeffs, \
-            "Length of the roots of unity is too small. Length is " + len(rou)
+        assert len(rou) >= num_coeffs, \
+            "Length of the roots of unity is too small. Length is " + str(len(rou))
 
         result = [coeffs[self.reversed_bits[i]] for i in range(num_coeffs)]
 
@@ -234,11 +240,11 @@ class FFTContext:
                     index_even = j + i
                     index_odd = j + i + (1 << (logm - 1))
 
-                    rou_idx = (i << (1 + log_num_coeffs - logm))
-                    omega_factor = (rou[rou_idx] * result[index_odd])
+                    rou_idx = (i * self.fft_length) >> logm
+                    omega_factor = rou[rou_idx] * result[index_odd]
 
-                    butterfly_plus = (result[index_even] + omega_factor)
-                    butterfly_minus = (result[index_even] - omega_factor)
+                    butterfly_plus = result[index_even] + omega_factor
+                    butterfly_minus = result[index_even] - omega_factor
 
                     result[index_even] = butterfly_plus
                     result[index_odd] = butterfly_minus
@@ -254,8 +260,8 @@ class FFTContext:
         Args:
             values (list): Input vector of complex numbers.
         """
-        assert len(values) == self.M / 4, "Input vector must have length equal to self.M = " \
-            + str(self.M / 4) + " != " + str(len(values)) + " = len(values)"
+        assert len(values) == self.fft_length / 4, "Input vector must have length equal to " \
+            + str(self.fft_length / 4) + " != " + str(len(values)) + " = len(values)"
 
     def fft_fwd(self, coeffs):
         """Runs forward FFT on the given values.
@@ -268,25 +274,7 @@ class FFTContext:
         Returns:
             List of transformed coefficients.
         """
-        num_coeffs = len(coeffs)
-        
-        result = [coeffs[self.reversed_bits[i]] for i in range(num_coeffs)]
-
-        ell = 2
-        while ell <= num_coeffs:
-            MoverLen = self.M // ell;
-            ellh = ell >> 1
-            for i in range(0, num_coeffs, ell):
-                for j in range(ellh):
-                    idx = j * MoverLen
-                    u = result[i + j]
-                    v = result[i + j + ellh]
-                    v *= self.roots_of_unity[idx]
-                    result[i + j] = u + v
-                    result[i + j + ellh] = u - v
-            ell *= 2
-
-        return result
+        return self.fft(coeffs, rou=self.roots_of_unity)
 
     def fft_inv(self, coeffs):
         """Runs inverse FFT on the given values.
@@ -300,22 +288,7 @@ class FFTContext:
             List of transformed coefficients.
         """
         num_coeffs = len(coeffs)
-
-        result = [coeffs[self.reversed_bits[i]] for i in range(num_coeffs)]
-
-        ell = 2
-        while ell <= num_coeffs:
-            MoverLen = self.M // ell
-            ellh = ell >> 1
-            for i in range(0, num_coeffs, ell):
-                for j in range(ellh):
-                    idx = (ell - j) * MoverLen
-                    u = result[i + j]
-                    v = result[i + j + ellh]
-                    v *= self.roots_of_unity[idx]
-                    result[i + j] = u + v
-                    result[i + j + ellh] = u - v
-            ell *= 2
+        result = self.fft(coeffs, rou=self.roots_of_unity_inv)
 
         for i in range(num_coeffs):
             result[i] /= num_coeffs
@@ -344,7 +317,7 @@ class FFTContext:
             for i in range(0, num_coeffs, l):
                 lh = l >> 1
                 lq = l << 2
-                gap = int(self.M / lq)
+                gap = int(self.fft_length / lq)
                 for j in range(lh):
                     idx = ((self.rot_group[j] % lq)) * gap
                     u = res[i + j]
@@ -377,7 +350,7 @@ class FFTContext:
             for i in range(0, num_coeffs, l):
                 lh = l >> 1
                 lq = l << 2
-                gap = int(self.M / lq)
+                gap = int(self.fft_length / lq)
 
                 for j in range(lh):
                     idx = (lq - (self.rot_group[j] % lq)) * gap

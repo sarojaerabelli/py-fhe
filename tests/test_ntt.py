@@ -12,6 +12,8 @@ TEST_DIRECTORY = os.path.dirname(__file__)
 class TestNTT(unittest.TestCase):
     def setUp(self):
         self.ntt = NTTContext(poly_degree=4, coeff_modulus=73)
+        self.num_slots = 4
+        self.fft = FFTContext(fft_length=4*self.num_slots)
 
     def test_ntt(self):
         fwd = self.ntt.ntt(coeffs=[0, 1, 4, 5], rou=self.ntt.roots_of_unity)
@@ -24,6 +26,10 @@ class TestNTT(unittest.TestCase):
         self.assertEqual(inv, [0, 1, 4, 5])
 
     def test_fft(self):
+        fft_vec = self.fft.fft_fwd(coeffs=[0, 1, 4, 5])
+        check_complex_vector_approx_eq(fft_vec, [10, -4-4j, -2, -4+4j])
+
+    def test_fft_inverses(self):
         """Checks that fft_fwd and fft_inv are inverses.
 
         Performs the FFT on the input vector, performs the inverse FFT on the result,
@@ -32,11 +38,9 @@ class TestNTT(unittest.TestCase):
         Raises:
             ValueError: An error if test fails.
         """
-        n = 1 << 5
-        context = FFTContext(M = 4 * n)
-        vec = sample_uniform(0, 7, n)
-        fft_vec = context.fft_fwd(vec)
-        to_check = context.fft_inv(fft_vec)
+        vec = sample_uniform(0, 7, self.num_slots)
+        fft_vec = self.fft.fft_fwd(vec)
+        to_check = self.fft.fft_inv(fft_vec)
 
         check_complex_vector_approx_eq(vec, to_check, 0.000001, "fft_inv is not the inverse of fft_fwd")
 
@@ -50,7 +54,7 @@ class TestNTT(unittest.TestCase):
             ValueError: An error if test fails.
         """
         n = 1 << 5
-        context = FFTContext(M = 4 * n)
+        context = FFTContext(fft_length=4 * n)
 
         vec = sample_uniform(0, 7, n)
         fft_vec = context.emb(vec)
