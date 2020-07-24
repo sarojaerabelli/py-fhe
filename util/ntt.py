@@ -73,13 +73,6 @@ class NTTContext:
             self.roots_of_unity_inv[i] = \
                 (self.roots_of_unity_inv[i - 1] * root_of_unity_inv) % self.coeff_modulus
 
-        # Scale powers of inverse root of unity by 1/d for the inverse FTT computation.
-        poly_degree_inv = nbtheory.mod_inv(self.degree, self.coeff_modulus)
-        self.scaled_rou_inv = [0] * self.degree
-        for i in range(self.degree):
-            self.scaled_rou_inv[i] = \
-                (poly_degree_inv * self.roots_of_unity_inv[i]) % self.coeff_modulus
-
         # Compute precomputed array of reversed bits for iterated NTT.
         self.reversed_bits = [0] * self.degree
         width = int(log(self.degree, 2))
@@ -163,10 +156,11 @@ class NTTContext:
         assert num_coeffs == self.degree, "ntt_inv: input length does not match context degree"
 
         to_scale_down = self.ntt(coeffs=coeffs, rou=self.roots_of_unity_inv)
+        poly_degree_inv = nbtheory.mod_inv(self.degree, self.coeff_modulus)
 
         # We scale down the FTT output given in the FTT paper.
-        result = [(int(to_scale_down[i]) * self.scaled_rou_inv[i]) % self.coeff_modulus
-                  for i in range(num_coeffs)]
+        result = [(int(to_scale_down[i]) * self.roots_of_unity_inv[i] * poly_degree_inv) \
+                  % self.coeff_modulus for i in range(num_coeffs)]
 
         return result
 
@@ -193,23 +187,32 @@ class FFTContext:
             fft_length (int): Length of the FFT vector.
         """
         self.fft_length = fft_length
-        self.roots_of_unity = [0] * (fft_length)
-        self.roots_of_unity_inv = [0] * (fft_length)
-        for i in range(fft_length):
-            angle = 2 * pi * i / fft_length
+        self.precompute_fft()
+
+    def precompute_fft(self):
+        """Performs precomputations for the FFT.
+
+        Precomputes all powers of roots of unity for the FFT and powers of inverse
+        roots of unity for the inverse FFT.
+        """
+        self.roots_of_unity = [0] * self.fft_length
+        self.roots_of_unity_inv = [0] * self.fft_length
+        for i in range(self.fft_length):
+            angle = 2 * pi * i / self.fft_length
             self.roots_of_unity[i] = complex(cos(angle), sin(angle))
             self.roots_of_unity_inv[i] = complex(cos(-angle), sin(-angle))
 
-        num_slots = fft_length // 4
-        self.rot_group = [1] * num_slots
-        for i in range(1, num_slots):
-            self.rot_group[i] = (5 * self.rot_group[i - 1]) % fft_length
-
         # Compute precomputed array of reversed bits for iterated FFT.
+        num_slots = self.fft_length // 4
         self.reversed_bits = [0] * num_slots
         width = int(log(num_slots, 2))
         for i in range(num_slots):
             self.reversed_bits[i] = reverse_bits(i, width) % num_slots
+
+        # Compute rotation group for EMB with powers of 5.
+        self.rot_group = [1] * num_slots
+        for i in range(1, num_slots):
+            self.rot_group[i] = (5 * self.rot_group[i - 1]) % self.fft_length
 
     def fft(self, coeffs, rou):
         """Runs FFT on the given coefficients.
@@ -260,8 +263,8 @@ class FFTContext:
         Args:
             values (list): Input vector of complex numbers.
         """
-        assert len(values) == self.fft_length / 4, "Input vector must have length equal to " \
-            + str(self.fft_length / 4) + " != " + str(len(values)) + " = len(values)"
+        assert len(values) <= self.fft_length / 4, "Input vector must have length at most " \
+            + str(self.fft_length / 4) + " < " + str(len(values)) + " = len(values)"
 
     def fft_fwd(self, coeffs):
         """Runs forward FFT on the given values.
@@ -307,7 +310,7 @@ class FFTContext:
         Returns:
             List of transformed coefficients.
         """
-
+        self.check_input(coeffs)
         num_coeffs = len(coeffs)
         result = bit_reverse_vec(coeffs)
         log_num_coeffs = int(log(num_coeffs, 2))
@@ -343,6 +346,7 @@ class FFTContext:
         Returns:
             List of transformed coefficients.
         """
+        self.check_input(coeffs)
         num_coeffs = len(coeffs)
         result = coeffs.copy()
         log_num_coeffs = int(log(num_coeffs, 2))

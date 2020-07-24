@@ -1,7 +1,6 @@
 """A module to encode integers as specified in the CKKS scheme.
 """
 
-from math import floor
 from util.ntt import FFTContext
 from util.plaintext import Plaintext
 from util.polynomial import Polynomial
@@ -22,7 +21,7 @@ class CKKSEncoder:
                 plaintext modulus, and ciphertext modulus.
         """
         self.degree = params.poly_degree
-        self.fft = FFTContext(1 << 17)
+        self.fft = FFTContext(self.degree * 2)
 
     def encode(self, values, scaling_factor):
         """Encodes complex numbers into a polynomial.
