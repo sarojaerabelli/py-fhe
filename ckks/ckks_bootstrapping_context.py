@@ -30,7 +30,7 @@ class CKKSBootstrappingContext:
         self.generate_encoding_matrices()
 
     def get_primitive_root(self, index):
-        """Returns the ith out of the n roots of unity, where n is the number of slots.
+        """Returns the ith out of the n roots of unity, where n is 2 * poly_degree.
 
         Args:
             index (int): Index i to specify.
@@ -38,8 +38,7 @@ class CKKSBootstrappingContext:
         Returns:
             The ith out of nth root of unity.
         """
-        num_slots = self.poly_degree // 2
-        angle = math.pi * index / 2 / num_slots
+        angle = math.pi * index / self.poly_degree
         return complex(math.cos(angle), math.sin(angle))
 
     def generate_encoding_matrices(self):
