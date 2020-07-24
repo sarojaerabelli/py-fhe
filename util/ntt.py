@@ -105,7 +105,7 @@ class NTTContext:
         assert len(rou) == num_coeffs, \
             "Length of the roots of unity is too small. Length is " + len(rou)
 
-        result = [coeffs[self.reversed_bits[i]] for i in range(num_coeffs)]
+        result = bit_reverse_vec(coeffs)
 
         log_num_coeffs = int(log(num_coeffs, 2))
 
@@ -230,7 +230,7 @@ class FFTContext:
         assert len(rou) >= num_coeffs, \
             "Length of the roots of unity is too small. Length is " + str(len(rou))
 
-        result = [coeffs[self.reversed_bits[i]] for i in range(num_coeffs)]
+        result = bit_reverse_vec(coeffs)
 
         log_num_coeffs = int(log(num_coeffs, 2))
 
@@ -309,25 +309,27 @@ class FFTContext:
         """
 
         num_coeffs = len(coeffs)
+        result = bit_reverse_vec(coeffs)
+        log_num_coeffs = int(log(num_coeffs, 2))
 
-        res = bit_reverse_vec(coeffs)
+        for logm in range(1, log_num_coeffs + 1):
+            idx_mod = 1 << (logm + 2)
+            gap = self.fft_length // idx_mod
+            for j in range(0, num_coeffs, (1 << logm)):
+                for i in range(1 << (logm - 1)):
+                    index_even = j + i
+                    index_odd = j + i + (1 << (logm - 1))
 
-        l = 2
-        while l <= num_coeffs:
-            for i in range(0, num_coeffs, l):
-                lh = l >> 1
-                lq = l << 2
-                gap = int(self.fft_length / lq)
-                for j in range(lh):
-                    idx = ((self.rot_group[j] % lq)) * gap
-                    u = res[i + j]
-                    v = res[i + j + lh]
-                    v *= self.roots_of_unity[idx]
-                    res[i + j] = u + v
-                    res[i + j + lh] = u - v
-            l <<= 1
+                    rou_idx = (self.rot_group[i] % idx_mod) * gap
+                    omega_factor = self.roots_of_unity[rou_idx] * result[index_odd]
 
-        return res
+                    butterfly_plus = result[index_even] + omega_factor
+                    butterfly_minus = result[index_even] - omega_factor
+
+                    result[index_even] = butterfly_plus
+                    result[index_odd] = butterfly_minus
+
+        return result
 
     def emb_inv(self, coeffs):
         """Runs inverse FFT on the given values.
@@ -341,29 +343,28 @@ class FFTContext:
         Returns:
             List of transformed coefficients.
         """
-
-        res = coeffs.copy()
-
         num_coeffs = len(coeffs)
-        l = num_coeffs
-        while l >= 1:
-            for i in range(0, num_coeffs, l):
-                lh = l >> 1
-                lq = l << 2
-                gap = int(self.fft_length / lq)
+        result = coeffs.copy()
+        log_num_coeffs = int(log(num_coeffs, 2))
 
-                for j in range(lh):
-                    idx = (lq - (self.rot_group[j] % lq)) * gap
-                    u = res[i + j] + res[i + j + lh]
-                    v = res[i + j] - res[i + j + lh]
-                    v *= self.roots_of_unity[idx]
+        for logm in range(log_num_coeffs, 0, -1):
+            idx_mod = 1 << (logm + 2)
+            gap = self.fft_length // idx_mod
+            for j in range(0, num_coeffs, 1 << logm):
+                for i in range(1 << (logm - 1)):
+                    index_even = j + i
+                    index_odd = j + i + (1 << (logm - 1))
 
-                    res[i + j] = u
-                    res[i + j + lh] = v
+                    rou_idx = (self.rot_group[i] % idx_mod) * gap
 
-            l >>= 1
+                    butterfly_plus = result[index_even] + result[index_odd]
+                    butterfly_minus = result[index_even] - result[index_odd]
+                    butterfly_minus *= self.roots_of_unity_inv[rou_idx]
 
-        to_scale_down = bit_reverse_vec(res)
+                    result[index_even] = butterfly_plus
+                    result[index_odd] = butterfly_minus
+
+        to_scale_down = bit_reverse_vec(result)
 
         for i in range(num_coeffs):
             to_scale_down[i] /= num_coeffs
