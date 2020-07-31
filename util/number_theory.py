@@ -1,6 +1,7 @@
 """A module with number theory functions necessary for other functions.
 """
 
+import random
 import sympy
 
 def mod_exp(val, exp, modulus):
@@ -48,7 +49,7 @@ def find_generator(modulus):
     return sympy.ntheory.primitive_root(modulus)
 
 def root_of_unity(order, modulus):
-    """Finds an root of unity in the given modulus.
+    """Finds a root of unity in the given modulus.
 
     Finds a root of unity with the given order in the given prime modulus.
 
@@ -74,3 +75,37 @@ def root_of_unity(order, modulus):
         return root_of_unity(order, modulus)
 
     return result
+
+def is_prime(number, num_trials=200):
+    """Determines whether a number is prime.
+
+    Runs the Miller-Rabin probabilistic primality test many times on the given number.
+
+    Args:
+        number (int): Number to perform primality test on.
+        num_trials (int): Number of times to perform the Miller-Rabin test.
+
+    Returns:
+        True if number is prime, False otherwise.
+    """
+    if number < 2:
+        return False
+    if number != 2 and number % 2 == 0:
+        return False
+
+    # Find largest odd factor of n-1.
+    exp = number - 1
+    while exp % 2 == 0:
+        exp //= 2
+
+    for _ in range(num_trials):
+        rand_val = int(random.SystemRandom().randrange(1, number))
+        new_exp = exp
+        power = pow(rand_val, new_exp, number)
+        while new_exp != number - 1 and power != 1 and power != number - 1:
+            power = (power * power) % number
+            new_exp *= 2
+        if power != number - 1 and new_exp % 2 == 0:
+            return False
+
+    return True

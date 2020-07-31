@@ -5,6 +5,7 @@ import math
 
 from ckks.ckks_bootstrapping_context import CKKSBootstrappingContext
 from util.ciphertext import Ciphertext
+from util.crt import CRTContext
 import util.matrix_operations
 from util.plaintext import Plaintext
 from util.polynomial import Polynomial
@@ -20,6 +21,8 @@ class CKKSEvaluator:
         big_modulus (int): Modulus q of coefficients of polynomial
             ring R_q.
         scaling_factor (float): Scaling factor to encode new plaintexts with.
+        boot_context (CKKSBootstrappingContext): Bootstrapping pre-computations.
+        crt_context (CRTContext): CRT functions.
     """
 
     def __init__(self, params):
@@ -32,7 +35,8 @@ class CKKSEvaluator:
         self.degree = params.poly_degree
         self.big_modulus = params.big_modulus
         self.scaling_factor = params.scaling_factor
-        self.bootstrapping_context = CKKSBootstrappingContext(params)
+        self.boot_context = CKKSBootstrappingContext(params)
+        self.crt_context = params.crt_context
 
     def add(self, ciph1, ciph2):
         """Adds two ciphertexts.
@@ -136,16 +140,15 @@ class CKKSEvaluator:
 
         modulus = ciph1.modulus
 
-        c0 = ciph1.c0.multiply(ciph2.c0, modulus)
+        c0 = ciph1.c0.multiply(ciph2.c0, modulus, crt=self.crt_context)
         c0 = c0.mod_small(modulus)
 
-        c1 = ciph1.c0.multiply(ciph2.c1, modulus)
-        temp = ciph1.c1.multiply(ciph2.c0, modulus)
+        c1 = ciph1.c0.multiply(ciph2.c1, modulus, crt=self.crt_context)
+        temp = ciph1.c1.multiply(ciph2.c0, modulus, crt=self.crt_context)
         c1 = c1.add(temp, modulus)
         c1 = c1.mod_small(modulus)
 
-
-        c2 = ciph1.c1.multiply(ciph2.c1, modulus)
+        c2 = ciph1.c1.multiply(ciph2.c1, modulus, crt=self.crt_context)
         c2 = c2.mod_small(modulus)
 
         return self.relinearize(relin_key, c0, c1, c2, ciph1.scaling_factor * ciph2.scaling_factor,
@@ -166,10 +169,10 @@ class CKKSEvaluator:
         assert isinstance(ciph, Ciphertext)
         assert isinstance(plain, Plaintext)
 
-        c0 = ciph.c0.multiply(plain.p, ciph.modulus)
+        c0 = ciph.c0.multiply(plain.p, ciph.modulus, crt=self.crt_context)
         c0 = c0.mod_small(ciph.modulus)
 
-        c1 = ciph.c1.multiply(plain.p, ciph.modulus)
+        c1 = ciph.c1.multiply(plain.p, ciph.modulus, crt=self.crt_context)
         c1 = c1.mod_small(ciph.modulus)
 
         return Ciphertext(c0, c1, ciph.scaling_factor * plain.scaling_factor, ciph.modulus)
@@ -190,13 +193,13 @@ class CKKSEvaluator:
         Returns:
             A Ciphertext which has only two components.
         """
-        new_c0 = relin_key.p0.multiply_naive(c2, modulus * self.big_modulus)
+        new_c0 = relin_key.p0.multiply(c2, modulus * self.big_modulus, crt=self.crt_context)
         new_c0 = new_c0.mod_small(modulus * self.big_modulus)
         new_c0 = new_c0.scalar_integer_divide(self.big_modulus)
         new_c0 = new_c0.add(c0, modulus)
         new_c0 = new_c0.mod_small(modulus)
 
-        new_c1 = relin_key.p1.multiply_naive(c2, modulus * self.big_modulus)
+        new_c1 = relin_key.p1.multiply(c2, modulus * self.big_modulus, crt=self.crt_context)
         new_c1 = new_c1.mod_small(modulus * self.big_modulus)
         new_c1 = new_c1.scalar_integer_divide(self.big_modulus)
         new_c1 = new_c1.add(c1, modulus)
@@ -217,13 +220,13 @@ class CKKSEvaluator:
             A Ciphertext which encrypts the same message under a different key.
         """
 
-        c0 = key.p0.multiply_naive(ciph.c1, ciph.modulus * self.big_modulus)
+        c0 = key.p0.multiply(ciph.c1, ciph.modulus * self.big_modulus, crt=self.crt_context)
         c0 = c0.mod_small(ciph.modulus * self.big_modulus)
         c0 = c0.scalar_integer_divide(self.big_modulus)
         c0 = c0.add(ciph.c0, ciph.modulus)
         c0 = c0.mod_small(ciph.modulus)
 
-        c1 = key.p1.multiply_naive(ciph.c1, ciph.modulus * self.big_modulus)
+        c1 = key.p1.multiply(ciph.c1, ciph.modulus * self.big_modulus, crt=self.crt_context)
         c1 = c1.mod_small(ciph.modulus * self.big_modulus)
         c1 = c1.scalar_integer_divide(self.big_modulus)
         c1 = c1.mod_small(ciph.modulus)
@@ -434,20 +437,20 @@ class CKKSEvaluator:
             Two Ciphertexts which are transformed.
         """
         # Compute new ciphertexts.
-        s1 = self.multiply_matrix(ciph, self.bootstrapping_context.encoding_mat_conj_transpose0,
+        s1 = self.multiply_matrix(ciph, self.boot_context.encoding_mat_conj_transpose0,
                                   rot_keys, encoder)
         s2 = self.conjugate(ciph, conj_key)
-        s2 = self.multiply_matrix(s2, self.bootstrapping_context.encoding_mat_transpose0, rot_keys,
+        s2 = self.multiply_matrix(s2, self.boot_context.encoding_mat_transpose0, rot_keys,
                                   encoder)
         ciph0 = self.add(s1, s2)
         constant = self.create_constant_plain(1 / self.degree)
         ciph0 = self.multiply_plain(ciph0, constant)
         ciph0 = self.rescale(ciph0, self.scaling_factor)
 
-        s1 = self.multiply_matrix(ciph, self.bootstrapping_context.encoding_mat_conj_transpose1,
+        s1 = self.multiply_matrix(ciph, self.boot_context.encoding_mat_conj_transpose1,
                                   rot_keys, encoder)
         s2 = self.conjugate(ciph, conj_key)
-        s2 = self.multiply_matrix(s2, self.bootstrapping_context.encoding_mat_transpose1, rot_keys,
+        s2 = self.multiply_matrix(s2, self.boot_context.encoding_mat_transpose1, rot_keys,
                                   encoder)
         ciph1 = self.add(s1, s2)
         ciph1 = self.multiply_plain(ciph1, constant)
@@ -471,9 +474,9 @@ class CKKSEvaluator:
         Returns:
             Ciphertext which is transformed.
         """
-        s1 = self.multiply_matrix(ciph0, self.bootstrapping_context.encoding_mat0, rot_keys,
+        s1 = self.multiply_matrix(ciph0, self.boot_context.encoding_mat0, rot_keys,
                                   encoder)
-        s2 = self.multiply_matrix(ciph1, self.bootstrapping_context.encoding_mat1, rot_keys,
+        s2 = self.multiply_matrix(ciph1, self.boot_context.encoding_mat1, rot_keys,
                                   encoder)
         ciph = self.add(s1, s2)
 

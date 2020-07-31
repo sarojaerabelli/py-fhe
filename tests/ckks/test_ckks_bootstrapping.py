@@ -14,7 +14,6 @@ from ckks.ckks_key_generator import CKKSKeyGenerator
 from ckks.ckks_parameters import CKKSParameters
 from tests.helper import check_complex_vector_approx_eq
 from util.plaintext import Plaintext
-from util.polynomial import Polynomial
 import util.matrix_operations as mat
 from util.random_sample import sample_random_complex_vector
 

@@ -36,16 +36,21 @@ class TestPolynomial(unittest.TestCase):
         self.assertEqual(poly_prod.coeffs, poly_prod2.coeffs)
 
     def test_multiply_crt(self):
-        primes = [89, 73, 97, 113, 137]
-        modulus = 1
-        for val in primes:
-            modulus *= val
-        crt = CRTContext(primes)
-        poly1 = Polynomial(4, [0, 1, 4, 5])
-        poly2 = Polynomial(4, [1, 2, 4, 3])
+        log_modulus = 10
+        modulus = 1 << log_modulus
+        prime_size = 59
+        log_poly_degree = 2
+        poly_degree = 1 << log_poly_degree
+        num_primes = (2 + log_poly_degree + 4 * log_modulus + prime_size - 1) // prime_size
+        crt = CRTContext(num_primes, prime_size, poly_degree)
+        poly1 = Polynomial(poly_degree, [0, 1, 4, 5])
+        poly2 = Polynomial(poly_degree, [1, 2, 4, 3])
         poly_prod = poly1.multiply_crt(poly2, crt)
+        poly_prod = poly_prod.mod_small(modulus)
         poly_prod2 = poly2.multiply_crt(poly1, crt)
-        actual = poly1.multiply(poly2, modulus)
+        poly_prod2 = poly_prod2.mod_small(modulus)
+        actual = poly1.multiply_naive(poly2, modulus)
+        actual = actual.mod_small(modulus)
         self.assertEqual(poly_prod.coeffs, actual.coeffs)
         self.assertEqual(poly_prod.coeffs, poly_prod2.coeffs)
 

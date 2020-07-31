@@ -140,9 +140,9 @@ class Polynomial:
         final_coeffs = [0] * self.ring_degree
         for i in range(self.ring_degree):
             values = [p.coeffs[i] for p in poly_prods]
-            final_coeffs[i] = crt.transform(values)
+            final_coeffs[i] = crt.reconstruct(values)
 
-        return Polynomial(self.ring_degree, final_coeffs)
+        return Polynomial(self.ring_degree, final_coeffs).mod_small(crt.modulus)
 
 
     def multiply_fft(self, poly, round=True):

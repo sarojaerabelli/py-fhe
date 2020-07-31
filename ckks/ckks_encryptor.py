@@ -12,6 +12,7 @@ class CKKSEncryptor:
         poly_degree: Degree of polynomial in quotient ring.
         coeff_modulus: Coefficient modulus in ciphertext space.
         big_modulus: Bootstrapping modulus.
+        crt_context: CRT context for multiplication.
         public_key (PublicKey): Public key used for encryption.
         secret_key (SecretKey): Only used for secret key encryption.
     """
@@ -28,6 +29,7 @@ class CKKSEncryptor:
         self.poly_degree = params.poly_degree
         self.coeff_modulus = params.ciph_modulus
         self.big_modulus = params.big_modulus
+        self.crt_context = params.crt_context
         self.public_key = public_key
         self.secret_key = secret_key
 
@@ -49,7 +51,7 @@ class CKKSEncryptor:
         random_vec = Polynomial(self.poly_degree, sample_triangle(self.poly_degree))
         error = Polynomial(self.poly_degree, sample_triangle(self.poly_degree))
 
-        c0 = sk.multiply(random_vec, self.coeff_modulus)
+        c0 = sk.multiply(random_vec, self.coeff_modulus, crt=self.crt_context)
         c0 = error.add(c0, self.coeff_modulus)
         c0 = c0.add(plain.p, self.coeff_modulus)
         c0 = c0.mod_small(self.coeff_modulus)
@@ -78,12 +80,12 @@ class CKKSEncryptor:
         error1 = Polynomial(self.poly_degree, sample_triangle(self.poly_degree))
         error2 = Polynomial(self.poly_degree, sample_triangle(self.poly_degree))
 
-        c0 = p0.multiply(random_vec, self.coeff_modulus)
+        c0 = p0.multiply(random_vec, self.coeff_modulus, crt=self.crt_context)
         c0 = error1.add(c0, self.coeff_modulus)
         c0 = c0.add(plain.p, self.coeff_modulus)
         c0 = c0.mod_small(self.coeff_modulus)
 
-        c1 = p1.multiply(random_vec, self.coeff_modulus)
+        c1 = p1.multiply(random_vec, self.coeff_modulus, crt=self.crt_context)
         c1 = error2.add(c1, self.coeff_modulus)
         c1 = c1.mod_small(self.coeff_modulus)
 

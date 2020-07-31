@@ -28,5 +28,20 @@ class TestNumberTheory(unittest.TestCase):
         self.assertEqual(number_theory.root_of_unity(order=3, modulus=7), 2)
         self.assertEqual(number_theory.root_of_unity(order=5, modulus=11), 4)
 
+    def test_is_prime(self):
+        self.assertEqual(number_theory.is_prime(2), True)
+        self.assertEqual(number_theory.is_prime(3), True)
+        self.assertEqual(number_theory.is_prime(5), True)
+        self.assertEqual(number_theory.is_prime(7), True)
+        self.assertEqual(number_theory.is_prime(11), True)
+        self.assertEqual(number_theory.is_prime(12), False)
+        self.assertEqual(number_theory.is_prime(14), False)
+        self.assertEqual(number_theory.is_prime(15), False)
+        self.assertEqual(number_theory.is_prime(21), False)
+        self.assertEqual(number_theory.is_prime(25), False)
+
+        self.assertEqual(number_theory.is_prime(7919), True)
+        self.assertEqual(number_theory.is_prime(7921), False)
+
 if __name__ == '__main__':
     res = unittest.main(verbosity=3, exit=False)
