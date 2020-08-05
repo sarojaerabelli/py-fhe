@@ -390,7 +390,7 @@ class TestBootstrapping(unittest.TestCase):
             self.run_test_bootstrap(vec)
         except Exception:
             self.run_test_bootstrap_steps(vec)
-
+    '''
     def test_bootstrap_time(self):
         num_iterations = 5
         print("Number of bootstraps: %d" % (num_iterations))
@@ -403,6 +403,6 @@ class TestBootstrapping(unittest.TestCase):
             total_time += time.clock() - start_time
 
         print("Average time per bootstrap operation: %f seconds" % (total_time / num_iterations))
-
+    '''
 if __name__ == '__main__':
     res = unittest.main(verbosity=3, exit=False)

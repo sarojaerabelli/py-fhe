@@ -77,7 +77,7 @@ class Polynomial:
             poly_diff = poly_diff.mod(coeff_modulus)
         return poly_diff
 
-    def multiply(self, poly, coeff_modulus, crt=None):
+    def multiply(self, poly, coeff_modulus, ntt=None, crt=None):
         """Multiplies two polynomials in the ring using NTT.
 
         Multiplies the current polynomial to poly inside the ring R_a
@@ -88,6 +88,8 @@ class Polynomial:
                 polynomial.
             coeff_modulus (int): Modulus a of coefficients of polynomial
                 ring R_a.
+            ntt (NTTContext): An instance of the NTTContext object, which
+                can be used for multiplication.
             crt (CRTContext): An instance of the CRTContext object, which
                 was created with primes whose product is the coefficient
                 modulus. It defaults to None, if we are not using the
@@ -99,16 +101,14 @@ class Polynomial:
         if crt:
             return self.multiply_crt(poly, crt)
 
-        try:
-            ntt = NTTContext(self.ring_degree, coeff_modulus)
+        if ntt:
             a = ntt.ftt_fwd(self.coeffs)
             b = ntt.ftt_fwd(poly.coeffs)
             ab = [a[i] * b[i] for i in range(self.ring_degree)]
             prod = ntt.ftt_inv(ab)
             return Polynomial(self.ring_degree, prod)
-        except Exception:
-            #print("NTT Failed. Coefficient modulus is %d." % (coeff_modulus))
-            return self.multiply_naive(poly, coeff_modulus)
+        
+        return self.multiply_naive(poly, coeff_modulus)
 
     def multiply_crt(self, poly, crt):
         """Multiplies two polynomials in the ring in CRT representation.
@@ -132,8 +132,8 @@ class Polynomial:
         poly_prods = []
 
         # Perform NTT for each prime factor.
-        for prime in crt.primes:
-            prod = self.multiply(poly, prime)
+        for i in range(len(crt.primes)):
+            prod = self.multiply(poly, crt.primes[i], ntt=crt.ntts[i])
             poly_prods.append(prod)
 
         # Combine the products with CRT.

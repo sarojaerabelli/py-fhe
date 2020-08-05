@@ -2,6 +2,7 @@
 """
 
 import util.number_theory as nbtheory
+from util.ntt import NTTContext
 
 class CRTContext:
 
@@ -10,6 +11,7 @@ class CRTContext:
     We split a large number into its prime factors.
 
     Attributes:
+        poly_degree (int): Polynomial ring degree.
         primes (list): List of primes.
         modulus (int): Large modulus, product of all primes.
     """
@@ -22,11 +24,15 @@ class CRTContext:
             prime_size (int): Minimum number of bits in primes.
             poly_degree (int): Polynomial degree of ring.
         """
+        self.poly_degree = poly_degree
         self.generate_primes(num_primes, prime_size, mod=2*poly_degree)
+        self.generate_ntt_contexts()
 
         self.modulus = 1
         for prime in self.primes:
             self.modulus *= prime
+
+        self.precompute_crt()
 
     def generate_primes(self, num_primes, prime_size, mod):
         """Generates primes that are 1 (mod M), where M is twice the polynomial degree.
@@ -44,6 +50,24 @@ class CRTContext:
                 possible_prime += mod
             self.primes[i] = possible_prime
 
+    def generate_ntt_contexts(self):
+        """Generates NTTContexts for each primes.
+        """
+        self.ntts = []
+        for prime in self.primes:
+            ntt = NTTContext(self.poly_degree, prime)
+            self.ntts.append(ntt)
+
+    def precompute_crt(self):
+        """Perform precomputations required for switching representations.
+        """
+        num_primes = len(self.primes)
+        self.crt_vals = [1] * num_primes
+        self.crt_inv_vals = [1] * num_primes
+        for i in range(num_primes):
+            self.crt_vals[i] = self.modulus // self.primes[i]
+            self.crt_inv_vals[i] = nbtheory.mod_inv(self.crt_vals[i], self.primes[i])
+
     def crt(self, value):
         """Transform value to CRT representation.
 
@@ -60,14 +84,11 @@ class CRTContext:
             values (list): List of values which are x_i (mod p_i).
         """
         assert len(values) == len(self.primes)
-        
         regular_rep_val = 0
 
         for i in range(len(values)):
-            crt_val = self.modulus // self.primes[i]
-            crt_inv_val = nbtheory.mod_inv(crt_val, self.primes[i])
-            intermed_val = (values[i] * crt_inv_val) % self.primes[i]
-            intermed_val = (intermed_val * crt_val) % self.modulus
+            intermed_val = (values[i] * self.crt_inv_vals[i]) % self.primes[i]
+            intermed_val = (intermed_val * self.crt_vals[i]) % self.modulus
             regular_rep_val += intermed_val
             regular_rep_val %= self.modulus
 
