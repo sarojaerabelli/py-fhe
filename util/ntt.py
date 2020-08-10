@@ -299,7 +299,7 @@ class FFTContext:
             + str(self.fft_length / 4) + " < " + str(len(values)) + " = len(values)"
 
     def embedding(self, coeffs):
-        """Computes the canonical embedding on the given coefficients.
+        """Computes a variant of the canonical embedding on the given coefficients.
 
         Computes the canonical embedding which consists of evaluating a given polynomial at roots of unity
         that are indexed 1 (mod 4), w, w^5, w^9, ...
@@ -335,7 +335,7 @@ class FFTContext:
         return result
 
     def embedding_inv(self, coeffs):
-        """Computes the inverse canonical embedding.
+        """Computes the inverse variant of the canonical embedding.
 
         Args:
             values (list): List of complex numbers to transform.

@@ -46,21 +46,64 @@ def sample_triangle(num_samples):
         else: sample[i] = 0
     return sample
 
-## Samples a random complex vector of length n
-def sample_random_complex_vector(n):
-    l = [0] * n
-    for i in range(n):
-        
+def sample_hamming_weight_vector(length, hamming_weight):
+    """Samples from a Hamming weight distribution.
+
+    Samples uniformly from the set [-1, 0, 1] such that the
+    resulting vector has exactly h nonzero values.
+
+    Args:
+        length (int): Length of resulting vector.
+        hamming_weight (int): Hamming weight h of resulting vector.
+
+    Returns:
+        A list of randomly sampled values.
+    """
+    sample = [0] * length
+    total_weight = 0
+
+    while total_weight < hamming_weight:
+        index = random.randrange(0, length)
+        if sample[index] == 0:
+            r = random.randrange(0, 1)
+            if r == 0: sample[index] = -1
+            else: sample[index] = 1
+            total_weight += 1
+
+    return sample
+
+def sample_random_complex_vector(length):
+    """Samples a random complex vector,
+
+    Samples a vector with elements of the form a + bi where a and b
+    are chosen uniformly at random from the set [0, 1).
+
+    Args:
+        length (int): Length of vector.
+
+    Returns:
+        A list of randomly sampled complex values.
+    """
+    sample = [0] * length
+    for i in range(length):   
         a = random.random()
         b = random.random()
-        l[i] = a + b * 1j
-    return l
+        sample[i] = a + b * 1j
+    return sample
 
-## Samples a random real vector of length n
-def sample_random_real_vector(n):
-    l = [0] * n
-    for i in range(n):
-        
-        a = random.random()
-        l[i] = a
-    return l
+def sample_random_real_vector(length):
+    """Samples a random complex vector,
+
+    Samples a vector with elements chosen uniformly at random from
+    the set [0, 1).
+
+    Args:
+        length (int): Length of vector.
+
+    Returns:
+        A list of randomly sampled real values.
+    """
+    sample = [0] * length
+    for i in range(length):
+        sample[i] = random.random()
+    return sample

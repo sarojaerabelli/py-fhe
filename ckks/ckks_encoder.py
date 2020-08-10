@@ -38,7 +38,7 @@ class CKKSEncoder:
         num_values = len(values)
         plain_len = num_values << 1
 
-        # Canonical embedding inverse.
+        # Canonical embedding inverse variant.
         to_scale = self.fft.embedding_inv(values)
 
         # Multiply by scaling factor, and split up real and imaginary parts.
@@ -73,5 +73,5 @@ class CKKSEncoder:
             message[i] = complex(plain.poly.coeffs[i] / plain.scaling_factor,
                                  plain.poly.coeffs[i + num_values] / plain.scaling_factor)
 
-        # Forward canonical embedding.
+        # Compute canonical embedding variant.
         return self.fft.embedding(message)

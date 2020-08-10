@@ -15,6 +15,7 @@ class CKKSParameters:
         scaling_factor (float): Scaling factor to multiply by.
         num_primes (int): Number of primes for CRT representation
         prime_size (int): Minimum number of bits in primes for CRT representation.
+        hamming_weight (int): Hamming weight parameter for sampling secret key.
     """
 
     def __init__(self, poly_degree, ciph_modulus, big_modulus, scaling_factor, prime_size=None):
@@ -32,6 +33,7 @@ class CKKSParameters:
         self.ciph_modulus = ciph_modulus
         self.big_modulus = big_modulus
         self.scaling_factor = scaling_factor
+        self.hamming_weight = poly_degree // 4
         prime_size = 59
         if prime_size:
             num_primes = int((2 + math.log(poly_degree, 2) + 4 * math.log(big_modulus, 2) \

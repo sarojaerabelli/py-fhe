@@ -1,4 +1,5 @@
 """Tests for ntt.py."""
+from math import pi, cos, sin
 import os
 import unittest
 from util.ntt import NTTContext, FFTContext
@@ -42,13 +43,35 @@ class TestNTT(unittest.TestCase):
         fft_vec = self.fft.fft_fwd(vec)
         to_check = self.fft.fft_inv(fft_vec)
 
-        check_complex_vector_approx_eq(vec, to_check, 0.000001, "fft_inv is not the inverse of fft_fwd")
+        check_complex_vector_approx_eq(vec, to_check, 0.000001,
+                                       "fft_inv is not the inverse of fft_fwd")
 
     def test_embedding(self):
+        """Checks that canonical embedding is correct.
+
+        Checks that the embedding matches the evaluations of the roots of unity at
+        indices that are 1 (mod) 4.
+
+        Raises:
+            ValueError: An error if test fails.
+        """
+        coeffs = [10, 34, 71, 31]
+        poly = Polynomial(self.num_slots, coeffs)
+        fft_length = self.num_slots * 4
+        embedding = self.fft.embedding(coeffs)
+        evals = []
+        for i in range(1, fft_length, 4):
+            angle = 2 * pi * i / fft_length
+            root_of_unity = complex(cos(angle), sin(angle))
+            evals.append(poly.evaluate(root_of_unity))
+
+        check_complex_vector_approx_eq(embedding, evals, 0.00001)
+
+    def test_embedding_inverses(self):
         """Checks that embedding and embedding_inv are inverses.
 
-        Computes the canonical embedding on the input vector, performs the inverse embedding on the result,
-        and checks that they match.
+        Computes the canonical embedding on the input vector, performs the inverse embedding on the
+        result, and checks that they match.
 
         Raises:
             ValueError: An error if test fails.
@@ -60,7 +83,8 @@ class TestNTT(unittest.TestCase):
         fft_vec = context.embedding(vec)
         to_check = context.embedding_inv(fft_vec)
 
-        check_complex_vector_approx_eq(vec, to_check, 0.000001, "embedding_inv is not the inverse of embedding")
+        check_complex_vector_approx_eq(vec, to_check, 0.000001,
+                                       "embedding_inv is not the inverse of embedding")
 
 if __name__ == '__main__':
     res = unittest.main(verbosity=3, exit=False)

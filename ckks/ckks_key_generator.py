@@ -1,11 +1,10 @@
 """A module to generate public and private keys for the CKKS scheme."""
 
-from math import ceil, floor, log, sqrt
 from util.polynomial import Polynomial
 from util.public_key import PublicKey
 from util.rotation_key import RotationKey
 from util.secret_key import SecretKey
-from util.random_sample import sample_triangle, sample_uniform
+from util.random_sample import sample_triangle, sample_uniform, sample_hamming_weight_vector
 
 class CKKSKeyGenerator:
 
@@ -44,7 +43,8 @@ class CKKSKeyGenerator:
             params (Parameters): Parameters including polynomial degree,
                 plaintext, and ciphertext modulus.
         """
-        self.secret_key = SecretKey(Polynomial(params.poly_degree, sample_triangle(params.poly_degree)))
+        key = sample_hamming_weight_vector(params.poly_degree, params.hamming_weight)
+        self.secret_key = SecretKey(Polynomial(params.poly_degree, key))
 
     def generate_public_key(self, params):
         """Generates a public key for CKKS scheme.
