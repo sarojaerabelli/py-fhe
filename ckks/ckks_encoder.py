@@ -38,8 +38,8 @@ class CKKSEncoder:
         num_values = len(values)
         plain_len = num_values << 1
 
-        # FFT inverse.
-        to_scale = self.fft.emb_inv(values)
+        # Canonical embedding inverse.
+        to_scale = self.fft.embedding_inv(values)
 
         # Multiply by scaling factor, and split up real and imaginary parts.
         message = [0] * plain_len
@@ -64,14 +64,14 @@ class CKKSEncoder:
         if not isinstance(plain, Plaintext):
             raise ValueError("Input to decode must be a Plaintext")
 
-        plain_len = len(plain.p.coeffs)
+        plain_len = len(plain.poly.coeffs)
         num_values = plain_len >> 1
 
         # Divide by scaling factor, and turn back into a complex number.
         message = [0] * num_values
         for i in range(num_values):
-            message[i] = complex(plain.p.coeffs[i] / plain.scaling_factor,
-                                 plain.p.coeffs[i + num_values] / plain.scaling_factor)
+            message[i] = complex(plain.poly.coeffs[i] / plain.scaling_factor,
+                                 plain.poly.coeffs[i + num_values] / plain.scaling_factor)
 
-        # Forward FFT.
-        return self.fft.emb(message)
+        # Forward canonical embedding.
+        return self.fft.embedding(message)

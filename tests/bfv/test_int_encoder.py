@@ -21,7 +21,7 @@ class TestIntegerEncoder(unittest.TestCase):
 
     def test_encode(self):
         plain = self.encoder.encode(21)
-        self.assertEqual(plain.p.coeffs, [1, 0, 1, 0, 1] + [0] * (self.degree - 5))
+        self.assertEqual(plain.poly.coeffs, [1, 0, 1, 0, 1] + [0] * (self.degree - 5))
 
     def test_decode(self):
         plain = Plaintext(Polynomial(self.degree, [1, 0, 1, 0, 1] + [0] * (self.degree - 5)))

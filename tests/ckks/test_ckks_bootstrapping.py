@@ -78,8 +78,8 @@ class TestBootstrappingMethods(unittest.TestCase):
     def run_test_coeff_to_slot(self, message):
         num_slots = len(message)
         plain = self.encoder.encode(message, self.scaling_factor)
-        plain_ans1 = mat.scalar_multiply(plain.p.coeffs[:num_slots], 1 / self.scaling_factor)
-        plain_ans2 = mat.scalar_multiply(plain.p.coeffs[num_slots:], 1 / self.scaling_factor)
+        plain_ans1 = mat.scalar_multiply(plain.poly.coeffs[:num_slots], 1 / self.scaling_factor)
+        plain_ans2 = mat.scalar_multiply(plain.poly.coeffs[num_slots:], 1 / self.scaling_factor)
         ciph = self.encryptor.encrypt(plain)
 
         rot_keys = {}
@@ -116,9 +116,9 @@ class TestBootstrappingMethods(unittest.TestCase):
 
         ciph_ans = self.evaluator.slot_to_coeff(ciph1, ciph2, rot_keys, self.encoder)
         decrypted = self.decryptor.decrypt(ciph_ans)
-        plain_ans1 = mat.scalar_multiply(decrypted.p.coeffs[:num_slots],
+        plain_ans1 = mat.scalar_multiply(decrypted.poly.coeffs[:num_slots],
                                          1 / decrypted.scaling_factor)
-        plain_ans2 = mat.scalar_multiply(decrypted.p.coeffs[num_slots:],
+        plain_ans2 = mat.scalar_multiply(decrypted.poly.coeffs[num_slots:],
                                          1 / decrypted.scaling_factor)
 
         prim_root = math.e ** (math.pi * 1j / 2 / num_slots)
@@ -145,9 +145,9 @@ class TestBootstrappingMethods(unittest.TestCase):
         new_plain = [plain_1[i] + plain_2[i] for i in range(num_slots)]
 
         encoded = self.encoder.encode(new_plain, self.scaling_factor)
-        plain_check1 = mat.scalar_multiply(encoded.p.coeffs[:num_slots],
+        plain_check1 = mat.scalar_multiply(encoded.poly.coeffs[:num_slots],
                                            1 / decrypted.scaling_factor)
-        plain_check2 = mat.scalar_multiply(encoded.p.coeffs[num_slots:],
+        plain_check2 = mat.scalar_multiply(encoded.poly.coeffs[num_slots:],
                                            1 / decrypted.scaling_factor)
 
         decrypted = self.encoder.decode(decrypted)
@@ -225,29 +225,29 @@ class TestBootstrapping(unittest.TestCase):
 
         print(message)
         print("-----------------------")
-        print(plain.p.coeffs)
+        print(plain.poly.coeffs)
         plain = self.decryptor.decrypt(ciph)
-        test_plain = Plaintext(plain.p.mod_small(self.ciph_modulus), self.scaling_factor)
+        test_plain = Plaintext(plain.poly.mod_small(self.ciph_modulus), self.scaling_factor)
         print("-------- TEST --------")
-        print(test_plain.p.coeffs)
+        print(test_plain.poly.coeffs)
         print(self.encoder.decode(test_plain))
 
         print("---------- BIT SIZE ------------")
         print(math.log(self.scaling_factor, 2))
         print(math.log(self.ciph_modulus, 2))
-        print(math.log(abs(plain.p.coeffs[0]), 2))
+        print(math.log(abs(plain.poly.coeffs[0]), 2))
         print("---------- MOD ------------")
-        print(plain.p.coeffs[0])
-        print(plain.p.coeffs[0] > self.ciph_modulus / 2)
-        print(math.sin(2 * math.pi * plain.p.coeffs[0] / self.ciph_modulus))
+        print(plain.poly.coeffs[0])
+        print(plain.poly.coeffs[0] > self.ciph_modulus / 2)
+        print(math.sin(2 * math.pi * plain.poly.coeffs[0] / self.ciph_modulus))
         print(2 * math.pi * (plain.p.coeffs[0] % self.ciph_modulus) / self.ciph_modulus)
-        print(math.sin(2 * math.pi * plain.p.coeffs[0] / self.ciph_modulus) * self.ciph_modulus / 2 / math.pi)
-        print(plain.p.coeffs[0] % self.ciph_modulus)
+        print(math.sin(2 * math.pi * plain.poly.coeffs[0] / self.ciph_modulus) * self.ciph_modulus / 2 / math.pi)
+        print(plain.poly.coeffs[0] % self.ciph_modulus)
 
         # Coeff to slot.
         ciph0, ciph1 = self.evaluator.coeff_to_slot(ciph, rot_keys, conj_key, self.encoder)
-        plain_slots0 = [plain.p.coeffs[i] / self.evaluator.scaling_factor for i in range(num_slots)]
-        plain_slots1 = [plain.p.coeffs[i] / self.evaluator.scaling_factor
+        plain_slots0 = [plain.poly.coeffs[i] / self.evaluator.scaling_factor for i in range(num_slots)]
+        plain_slots1 = [plain.poly.coeffs[i] / self.evaluator.scaling_factor
                         for i in range(num_slots, 2 * num_slots)]
         print("----- COEFF TO SLOT -------")
         print(plain_slots0)
@@ -333,9 +333,9 @@ class TestBootstrapping(unittest.TestCase):
         print("----- SCALED SIN -------")
         print(scaled_sin0)
         print(scaled_sin1)
-        expected_slots0 = [(plain.p.coeffs[i] % self.ciph_modulus) / self.evaluator.scaling_factor
+        expected_slots0 = [(plain.poly.coeffs[i] % self.ciph_modulus) / self.evaluator.scaling_factor
                            for i in range(num_slots)]
-        expected_slots1 = [(plain.p.coeffs[i] % self.ciph_modulus) / self.evaluator.scaling_factor
+        expected_slots1 = [(plain.poly.coeffs[i] % self.ciph_modulus) / self.evaluator.scaling_factor
                            for i in range(num_slots, 2 * num_slots)]
         print(expected_slots0)
         print(expected_slots1)

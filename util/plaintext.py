@@ -8,7 +8,7 @@ class Plaintext:
     of one polynomial.
 
     Attributes:
-        p (Polynomial): Plaintext polynomial.
+        poly (Polynomial): Plaintext polynomial.
         scaling_factor (float): Scaling factor.
     """
 
@@ -19,7 +19,7 @@ class Plaintext:
             poly (Polynomial): Plaintext polynomial.
             scaling_factor (float): Scaling factor.
         """
-        self.p = poly
+        self.poly = poly
         self.scaling_factor = scaling_factor
 
     def __str__(self):
@@ -28,4 +28,4 @@ class Plaintext:
         Returns:
             A string which represents the Plaintext.
         """
-        return str(self.p)
+        return str(self.poly)

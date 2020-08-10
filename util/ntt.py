@@ -254,18 +254,6 @@ class FFTContext:
 
         return result
 
-    def check_input(self, values):
-        """Checks that the length of the input vector is the correct size.
-
-        Throws an error if the length of the input vector is not 1/4 the size
-        of the FFT vector.
-
-        Args:
-            values (list): Input vector of complex numbers.
-        """
-        assert len(values) <= self.fft_length / 4, "Input vector must have length at most " \
-            + str(self.fft_length / 4) + " < " + str(len(values)) + " = len(values)"
-
     def fft_fwd(self, coeffs):
         """Runs forward FFT on the given values.
 
@@ -298,11 +286,23 @@ class FFTContext:
 
         return result
 
-    def emb(self, coeffs):
-        """Runs forward packed FFT on the given values.
+    def check_embedding_input(self, values):
+        """Checks that the length of the input vector to embedding is the correct size.
 
-        Runs forward packed FFT with the given values for spaced slots
-        and parameters in the context.
+        Throws an error if the length of the input vector to embedding is not 1/4 the size
+        of the FFT vector.
+
+        Args:
+            values (list): Input vector of complex numbers.
+        """
+        assert len(values) <= self.fft_length / 4, "Input vector must have length at most " \
+            + str(self.fft_length / 4) + " < " + str(len(values)) + " = len(values)"
+
+    def embedding(self, coeffs):
+        """Computes the canonical embedding on the given coefficients.
+
+        Computes the canonical embedding which consists of evaluating a given polynomial at roots of unity
+        that are indexed 1 (mod 4), w, w^5, w^9, ...
 
         Args:
             coeffs (list): List of complex numbers to transform.
@@ -310,7 +310,7 @@ class FFTContext:
         Returns:
             List of transformed coefficients.
         """
-        self.check_input(coeffs)
+        self.check_embedding_input(coeffs)
         num_coeffs = len(coeffs)
         result = bit_reverse_vec(coeffs)
         log_num_coeffs = int(log(num_coeffs, 2))
@@ -334,11 +334,8 @@ class FFTContext:
 
         return result
 
-    def emb_inv(self, coeffs):
-        """Runs inverse FFT on the given values.
-
-        Runs inverse FFT with the given values for spaced slots
-        and parameters in the context.
+    def embedding_inv(self, coeffs):
+        """Computes the inverse canonical embedding.
 
         Args:
             values (list): List of complex numbers to transform.
@@ -346,7 +343,7 @@ class FFTContext:
         Returns:
             List of transformed coefficients.
         """
-        self.check_input(coeffs)
+        self.check_embedding_input(coeffs)
         num_coeffs = len(coeffs)
         result = coeffs.copy()
         log_num_coeffs = int(log(num_coeffs, 2))

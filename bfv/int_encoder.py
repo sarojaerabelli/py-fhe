@@ -61,7 +61,7 @@ class IntegerEncoder:
         """
         value = 0
         power = 1
-        for c in plain.p.coeffs:
+        for c in plain.poly.coeffs:
             value += c * power
             power *= self.base
         return value

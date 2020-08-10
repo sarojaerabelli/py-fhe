@@ -60,7 +60,7 @@ class TestCKKSEncoder(unittest.TestCase):
 
         plain1 = self.encoder.encode(vec1, self.scaling_factor)
         plain2 = self.encoder.encode(vec2, self.scaling_factor)
-        plain_prod = Plaintext(plain1.p.multiply_naive(plain2.p),
+        plain_prod = Plaintext(plain1.poly.multiply_naive(plain2.poly),
                                scaling_factor=self.scaling_factor**2)
         expected = self.encoder.decode(plain_prod)
 

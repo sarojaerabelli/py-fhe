@@ -10,15 +10,15 @@ class BatchEncoder:
     """An encoder for several integers to polynomials using Chinese
     Remainder Theorem (CRT) batching.
 
-    We encode d integers using CRT batching, where n is the degree of the
+    We encode N integers using CRT batching, where N is the degree of the
     polynomial that determines the quotient ring. Each polynomial p(x) in
-    the ring Z[x]/f(x), where f(x) = x^d + 1 maps to the d-length vector
-    [p(a_0), p(a_1), ..., p(a_d)] where a_i are the roots of f(x). This
+    the ring Z[x]/f(x), where f(x) = x^N + 1 maps to the N-length vector
+    [p(a_0), p(a_1), ..., p(a_N)] where a_i are the roots of f(x). This
     uniquely identifies a polynomial in the quotient ring, so we use it
-    to define our encoding, where each of these d-length vectors encodes to
+    to define our encoding, where each of these N-length vectors encodes to
     its unique corresponding polynomial in the quotient ring. However, we
     instead use the Fermat Theoretic Transform to obtain a slightly
-    modified d-length vector in faster time.
+    modified N-length vector in faster time.
 
     Attributes:
         degree (int): Degree of polynomial that determines quotient ring.
@@ -38,7 +38,7 @@ class BatchEncoder:
     def encode(self, values):
         """Encodes a list of integers into a polynomial.
 
-        Encodes a d-length list of integers (where d is the polynomial degree)
+        Encodes a N-length list of integers (where N is the polynomial degree)
         into a polynomial using CRT batching.
 
         Args: 
@@ -63,4 +63,4 @@ class BatchEncoder:
         Returns:
             A decoded list of integers.
         """
-        return self.ntt.ftt_fwd(plain.p.coeffs)
+        return self.ntt.ftt_fwd(plain.poly.coeffs)

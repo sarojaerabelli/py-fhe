@@ -53,7 +53,7 @@ class CKKSEncryptor:
 
         c0 = sk.multiply(random_vec, self.coeff_modulus, crt=self.crt_context)
         c0 = error.add(c0, self.coeff_modulus)
-        c0 = c0.add(plain.p, self.coeff_modulus)
+        c0 = c0.add(plain.poly, self.coeff_modulus)
         c0 = c0.mod_small(self.coeff_modulus)
 
         c1 = random_vec.scalar_multiply(-1, self.coeff_modulus)
@@ -82,7 +82,7 @@ class CKKSEncryptor:
 
         c0 = p0.multiply(random_vec, self.coeff_modulus, crt=self.crt_context)
         c0 = error1.add(c0, self.coeff_modulus)
-        c0 = c0.add(plain.p, self.coeff_modulus)
+        c0 = c0.add(plain.poly, self.coeff_modulus)
         c0 = c0.mod_small(self.coeff_modulus)
 
         c1 = p1.multiply(random_vec, self.coeff_modulus, crt=self.crt_context)

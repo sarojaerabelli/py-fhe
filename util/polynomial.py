@@ -386,6 +386,24 @@ class Polynomial:
             poly = poly.scalar_multiply(1 / base).floor()
         return decomposed
 
+    def evaluate(self, inp):
+        """Evaluates the polynomial at the given input value.
+
+        Evaluates the polynomial using Horner's method.
+
+        Args:
+            inp (int): Value to evaluate polynomial at.
+
+        Returns:
+            Evaluation of polynomial at input.
+        """
+        result = self.coeffs[-1]
+
+        for i in range(self.ring_degree - 2, -1, -1):
+            result = result * inp + self.coeffs[i]
+
+        return result
+
 
     def __str__(self):
         """Represents polynomial as a readable string.

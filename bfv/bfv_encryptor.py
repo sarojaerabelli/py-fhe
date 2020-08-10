@@ -42,7 +42,7 @@ class BFVEncryptor:
         """
         p0 = self.public_key.p0
         p1 = self.public_key.p1
-        scaled_message = message.p.scalar_multiply(self.scaling_factor, self.coeff_modulus)
+        scaled_message = message.poly.scalar_multiply(self.scaling_factor, self.coeff_modulus)
 
         random_vec = Polynomial(self.poly_degree,
                                 sample_triangle(self.poly_degree))

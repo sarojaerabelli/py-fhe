@@ -85,7 +85,7 @@ class CKKSEvaluator:
             + "Ciphertext scaling factor: %d bits, Plaintext scaling factor: %d bits" \
             % (math.log(ciph.scaling_factor, 2), math.log(plain.scaling_factor, 2))
 
-        c0 = ciph.c0.add(plain.p, ciph.modulus)
+        c0 = ciph.c0.add(plain.poly, ciph.modulus)
         c0 = c0.mod_small(ciph.modulus)
 
         return Ciphertext(c0, ciph.c1, ciph.scaling_factor, ciph.modulus)
@@ -169,10 +169,10 @@ class CKKSEvaluator:
         assert isinstance(ciph, Ciphertext)
         assert isinstance(plain, Plaintext)
 
-        c0 = ciph.c0.multiply(plain.p, ciph.modulus, crt=self.crt_context)
+        c0 = ciph.c0.multiply(plain.poly, ciph.modulus, crt=self.crt_context)
         c0 = c0.mod_small(ciph.modulus)
 
-        c1 = ciph.c1.multiply(plain.p, ciph.modulus, crt=self.crt_context)
+        c1 = ciph.c1.multiply(plain.poly, ciph.modulus, crt=self.crt_context)
         c1 = c1.mod_small(ciph.modulus)
 
         return Ciphertext(c0, c1, ciph.scaling_factor * plain.scaling_factor, ciph.modulus)

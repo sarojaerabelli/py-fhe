@@ -104,6 +104,11 @@ class TestPolynomial(unittest.TestCase):
         self.assertEqual(poly_decomposed[0].coeffs, [0, 1, 4, 5, 3])
         self.assertEqual(poly_decomposed[1].coeffs, [0, 0, 0, 0, 7])
 
+    def test_evaluate(self):
+        poly = Polynomial(self.degree, [0, 1, 2, 3, 4])
+        result = poly.evaluate(3)
+        self.assertEqual(result, 426)
+
     def test_str(self):
         string1 = str(self.poly1)
         string2 = str(self.poly2)

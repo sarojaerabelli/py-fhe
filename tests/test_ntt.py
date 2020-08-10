@@ -44,10 +44,10 @@ class TestNTT(unittest.TestCase):
 
         check_complex_vector_approx_eq(vec, to_check, 0.000001, "fft_inv is not the inverse of fft_fwd")
 
-    def test_emb(self):
-        """Checks that emb and emb_inv are inverses.
+    def test_embedding(self):
+        """Checks that embedding and embedding_inv are inverses.
 
-        Performs the EMB on the input vector, performs the inverse EMB on the result,
+        Computes the canonical embedding on the input vector, performs the inverse embedding on the result,
         and checks that they match.
 
         Raises:
@@ -57,10 +57,10 @@ class TestNTT(unittest.TestCase):
         context = FFTContext(fft_length=4 * n)
 
         vec = sample_uniform(0, 7, n)
-        fft_vec = context.emb(vec)
-        to_check = context.emb_inv(fft_vec)
+        fft_vec = context.embedding(vec)
+        to_check = context.embedding_inv(fft_vec)
 
-        check_complex_vector_approx_eq(vec, to_check, 0.000001, "emb_inv is not the inverse of emb")
+        check_complex_vector_approx_eq(vec, to_check, 0.000001, "embedding_inv is not the inverse of embedding")
 
 if __name__ == '__main__':
     res = unittest.main(verbosity=3, exit=False)
