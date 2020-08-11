@@ -13,7 +13,7 @@ TEST_DIRECTORY = os.path.dirname(__file__)
 class TestNTT(unittest.TestCase):
     def setUp(self):
         self.ntt = NTTContext(poly_degree=4, coeff_modulus=73)
-        self.num_slots = 4
+        self.num_slots = 8
         self.fft = FFTContext(fft_length=4*self.num_slots)
 
     def test_ntt(self):
@@ -55,15 +55,17 @@ class TestNTT(unittest.TestCase):
         Raises:
             ValueError: An error if test fails.
         """
-        coeffs = [10, 34, 71, 31]
+        coeffs = [10, 34, 71, 31, 1, 2, 3, 4]
         poly = Polynomial(self.num_slots, coeffs)
         fft_length = self.num_slots * 4
         embedding = self.fft.embedding(coeffs)
         evals = []
+        power = 1
         for i in range(1, fft_length, 4):
-            angle = 2 * pi * i / fft_length
+            angle = 2 * pi * power / fft_length
             root_of_unity = complex(cos(angle), sin(angle))
             evals.append(poly.evaluate(root_of_unity))
+            power = (power * 5) % fft_length
 
         check_complex_vector_approx_eq(embedding, evals, 0.00001)
 
