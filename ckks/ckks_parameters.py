@@ -13,9 +13,9 @@ class CKKSParameters:
         ciph_modulus (int): Coefficient modulus of ciphertexts.
         big_modulus (int): Large modulus used for bootstrapping.
         scaling_factor (float): Scaling factor to multiply by.
-        num_primes (int): Number of primes for CRT representation
-        prime_size (int): Minimum number of bits in primes for CRT representation.
         hamming_weight (int): Hamming weight parameter for sampling secret key.
+        prime_size (int): Minimum number of bits in primes for RNS representation.
+        crt_context (CRTContext): Context to manage RNS representation.
     """
 
     def __init__(self, poly_degree, ciph_modulus, big_modulus, scaling_factor, prime_size=None):
@@ -26,8 +26,7 @@ class CKKSParameters:
             ciph_modulus (int): Coefficient modulus of ciphertexts.
             big_modulus (int): Large modulus used for bootstrapping.
             scaling_factor (float): Scaling factor to multiply by.
-            num_primes (int): Number of primes for CRT representation
-            prime_size (int): Minimum number of bits in primes for CRT representation.
+            prime_size (int): Minimum number of bits in primes for RNS representation.
         """
         self.poly_degree = poly_degree
         self.ciph_modulus = ciph_modulus
@@ -36,8 +35,8 @@ class CKKSParameters:
         self.hamming_weight = poly_degree // 4
         prime_size = 59
         if prime_size:
-            num_primes = int((2 + math.log(poly_degree, 2) + 4 * math.log(big_modulus, 2) \
-                + prime_size - 1) / prime_size)
+            num_primes = 1 + int((1 + math.log(poly_degree, 2) + 4 * math.log(big_modulus, 2) \
+             / prime_size))
             self.crt_context = CRTContext(num_primes, prime_size, poly_degree)
 
     def print_parameters(self):

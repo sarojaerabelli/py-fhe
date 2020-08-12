@@ -303,6 +303,7 @@ class FFTContext:
 
         Computes the canonical embedding which consists of evaluating a given polynomial at roots of unity
         that are indexed 1 (mod 4), w, w^5, w^9, ...
+        The evaluations are returned in the order: w, w^5, w^(5^2), ...
 
         Args:
             coeffs (list): List of complex numbers to transform.

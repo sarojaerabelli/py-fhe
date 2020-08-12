@@ -207,6 +207,42 @@ class CKKSEvaluator:
 
         return Ciphertext(new_c0, new_c1, new_scaling_factor, modulus)
 
+    def rescale(self, ciph, division_factor):
+        """Rescales a ciphertext to a new scaling factor.
+
+        Divides ciphertext by division factor, and updates scaling factor
+        and ciphertext. modulus.
+
+        Args:
+            ciph (Ciphertext): Ciphertext to modify.
+            division_factor (float): Factor to divide by.
+
+        Returns:
+            Rescaled ciphertext.
+        """
+        c0 = ciph.c0.scalar_integer_divide(division_factor)
+        c1 = ciph.c1.scalar_integer_divide(division_factor)
+        return Ciphertext(c0, c1, ciph.scaling_factor // division_factor,
+                          ciph.modulus // division_factor)
+
+    def lower_modulus(self, ciph, division_factor):
+        """Rescales a ciphertext to a new scaling factor.
+
+        Divides ciphertext by division factor, and updates scaling factor
+        and ciphertext modulus.
+
+        Args:
+            ciph (Ciphertext): Ciphertext to modify.
+            division_factor (float): Factor to divide by.
+
+        Returns:
+            Rescaled ciphertext.
+        """
+        new_modulus = ciph.modulus // division_factor
+        c0 = ciph.c0.mod_small(new_modulus)
+        c1 = ciph.c1.mod_small(new_modulus)
+        return Ciphertext(c0, c1, ciph.scaling_factor, new_modulus)
+
     def switch_key(self, ciph, key):
         """Outputs ciphertext with switching key.
 
@@ -351,42 +387,6 @@ class CKKSEvaluator:
 
         outer_sum = self.rescale(outer_sum, self.scaling_factor)
         return outer_sum
-
-    def rescale(self, ciph, division_factor):
-        """Rescales a ciphertext to a new scaling factor.
-
-        Divides ciphertext by division factor, and updates scaling factor
-        and ciphertext. modulus.
-
-        Args:
-            ciph (Ciphertext): Ciphertext to modify.
-            division_factor (float): Factor to divide by.
-
-        Returns:
-            Rescaled ciphertext.
-        """
-        c0 = ciph.c0.scalar_integer_divide(division_factor)
-        c1 = ciph.c1.scalar_integer_divide(division_factor)
-        return Ciphertext(c0, c1, ciph.scaling_factor // division_factor,
-                          ciph.modulus // division_factor)
-
-    def lower_modulus(self, ciph, division_factor):
-        """Rescales a ciphertext to a new scaling factor.
-
-        Divides ciphertext by division factor, and updates scaling factor
-        and ciphertext modulus.
-
-        Args:
-            ciph (Ciphertext): Ciphertext to modify.
-            division_factor (float): Factor to divide by.
-
-        Returns:
-            Rescaled ciphertext.
-        """
-        new_modulus = ciph.modulus // division_factor
-        c0 = ciph.c0.mod_small(new_modulus)
-        c1 = ciph.c1.mod_small(new_modulus)
-        return Ciphertext(c0, c1, ciph.scaling_factor, new_modulus)
 
     # BOOTSTRAPPING
 
