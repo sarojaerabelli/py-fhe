@@ -580,7 +580,7 @@ class CKKSEvaluator:
         Returns:
             Ciphertext for exponential.
         """
-        num_iterations = 10
+        num_iterations = self.boot_context.num_taylor_iterations
         const_plain = self.create_complex_constant_plain(const / 2**num_iterations, encoder)
         ciph = self.multiply_plain(ciph, const_plain)
         ciph = self.rescale(ciph, self.scaling_factor)

@@ -3,7 +3,6 @@
 import math
 import cmath
 import os
-import time
 import unittest
 
 from ckks.ckks_decryptor import CKKSDecryptor
@@ -368,12 +367,12 @@ class TestBootstrapping(unittest.TestCase):
         print("Final modulus Q_1: %d bits" % (int(math.log(ciph.modulus, 2))))
 
     def run_test_bootstrap(self, message):
-        N = len(message)
+        num_slots = len(message)
         plain = self.encoder.encode(message, self.scaling_factor)
         ciph = self.encryptor.encrypt(plain)
 
         rot_keys = {}
-        for i in range(N):
+        for i in range(num_slots):
             rot_keys[i] = self.key_generator.generate_rot_key(i)
 
         conj_key = self.key_generator.generate_conj_key()
@@ -390,19 +389,6 @@ class TestBootstrapping(unittest.TestCase):
             self.run_test_bootstrap(vec)
         except Exception:
             self.run_test_bootstrap_steps(vec)
-    '''
-    def test_bootstrap_time(self):
-        num_iterations = 5
-        print("Number of bootstraps: %d" % (num_iterations))
-        total_time = 0
 
-        for _ in range(num_iterations):
-            vec = sample_random_complex_vector(self.degree // 2)
-            start_time = time.clock()
-            self.run_test_bootstrap(vec)
-            total_time += time.clock() - start_time
-
-        print("Average time per bootstrap operation: %f seconds" % (total_time / num_iterations))
-    '''
 if __name__ == '__main__':
     res = unittest.main(verbosity=3, exit=False)

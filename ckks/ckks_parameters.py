@@ -14,11 +14,14 @@ class CKKSParameters:
         big_modulus (int): Large modulus used for bootstrapping.
         scaling_factor (float): Scaling factor to multiply by.
         hamming_weight (int): Hamming weight parameter for sampling secret key.
+        taylor_iterations (int): Number of iterations to perform for Taylor series in
+            bootstrapping.
         prime_size (int): Minimum number of bits in primes for RNS representation.
         crt_context (CRTContext): Context to manage RNS representation.
     """
 
-    def __init__(self, poly_degree, ciph_modulus, big_modulus, scaling_factor, prime_size=None):
+    def __init__(self, poly_degree, ciph_modulus, big_modulus, scaling_factor, taylor_iterations=6,
+                 prime_size=59):
         """Inits Parameters with the given parameters.
 
         Args:
@@ -26,14 +29,18 @@ class CKKSParameters:
             ciph_modulus (int): Coefficient modulus of ciphertexts.
             big_modulus (int): Large modulus used for bootstrapping.
             scaling_factor (float): Scaling factor to multiply by.
-            prime_size (int): Minimum number of bits in primes for RNS representation.
+            taylor_iterations (int): Number of iterations to perform for Taylor series in
+                bootstrapping.
+            prime_size (int): Minimum number of bits in primes for RNS representation. Can set to 
+                None if using the RNS representation if undesirable.
         """
         self.poly_degree = poly_degree
         self.ciph_modulus = ciph_modulus
         self.big_modulus = big_modulus
         self.scaling_factor = scaling_factor
+        self.num_taylor_iterations = taylor_iterations
         self.hamming_weight = poly_degree // 4
-        prime_size = 59
+
         if prime_size:
             num_primes = 1 + int((1 + math.log(poly_degree, 2) + 4 * math.log(big_modulus, 2) \
              / prime_size))

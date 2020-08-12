@@ -14,8 +14,14 @@ class CKKSBootstrappingContext:
     Attributes:
         poly_degree: Polynomial degree of ring.
         old_modulus: Original modulus of initial ciphertext.
-        coeff_to_slot_context: Stores matrix information necessary for coeff_to_slot.
-        slot_to_coeff_context: Stores matrix information necessary for slot_to_coeff.
+        num_taylor_iterations: Number of iterations to perform for Taylor series
+            for exp.
+        encoding_mat0: Matrix for slot to coeff.
+        encoding_mat1: Matrix for slot to coeff.
+        encoding_mat_transpose0: Matrix for coeff to slot.
+        encoding_mat_transpose1: Matrix for coeff to slot.
+        encoding_mat_conj_transpose0: Matrix for coeff to slot.
+        encoding_mat_conj_transpose1: Matrix for coeff to slot.
     """
 
     def __init__(self, params):
@@ -27,6 +33,7 @@ class CKKSBootstrappingContext:
         """
         self.poly_degree = params.poly_degree
         self.old_modulus = params.ciph_modulus
+        self.num_taylor_iterations = params.num_taylor_iterations
         self.generate_encoding_matrices()
 
     def get_primitive_root(self, index):
