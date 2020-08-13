@@ -8,7 +8,10 @@ To install the library run the following command in the root folder:
 pip install -e .
 ```
 
-This should install the necessary dependencies. You can then run all the unit tests as follows:
+This should install the necessary dependencies.
+
+## Tests
+You can run all the unit tests as follows:
 ```sh
 pytest
 ```
@@ -25,4 +28,5 @@ To run a specific test from a test file (i.e. TestPolynomial.test_add from tests
 python3 tests/test_polynomial.py TestPolynomial.test_add
 ```
 
+## Examples
 See the examples folder for examples on how to use the library.
