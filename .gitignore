@@ -1,0 +1,9 @@
+*.swp
+*.pyc
+*.ipynb_checkpoints
+.vscode
+.pytest_cache
+.cache
+*.egg-info
+*.DS_Store
+__pycache__
