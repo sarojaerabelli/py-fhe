@@ -16,7 +16,7 @@ TEST_DIRECTORY = os.path.dirname(__file__)
 
 class TestEvaluator(unittest.TestCase):
     def setUp(self):
-        self.degree = 2048
+        self.degree = 512
         self.plain_modulus = 256
         self.ciph_modulus = 0x3fffffff000001
         params = BFVParameters(poly_degree=self.degree,

@@ -67,7 +67,7 @@ class TestEncryptDecrypt(unittest.TestCase):
         self.run_test_tiny_encrypt_decrypt([9, 18, 47, 50, 30])
 
     def test_large_encrypt_decrypt_01(self):
-        vec = sample_uniform(0, 1, self.large_degree)
+        vec = sample_uniform(0, self.large_plain_modulus, self.large_degree)
         self.run_test_large_encrypt_decrypt(vec)
 
 if __name__ == '__main__':

@@ -88,13 +88,12 @@ class TestEvaluator(unittest.TestCase):
         check_complex_vector_approx_eq(plain_sum, decoded_sum, error=0.001)
 
     def run_test_multiply(self, message1, message2):
-        poly1 = Polynomial(self.degree // 2, message1)
-        poly2 = Polynomial(self.degree // 2, message2)
+        num_slots = len(message1)
         plain1 = self.encoder.encode(message1, self.scaling_factor)
         plain2 = self.encoder.encode(message2, self.scaling_factor)
-        plain_prod = [0] * poly1.ring_degree
-        for i in range(poly1.ring_degree):
-            plain_prod[i] = poly1.coeffs[i] * poly2.coeffs[i]
+        plain_prod = [0] * num_slots
+        for i in range(num_slots):
+            plain_prod[i] = message1[i] * message2[i]
         ciph1 = self.encryptor.encrypt(plain1)
         ciph2 = self.encryptor.encrypt(plain2)
         ciph_prod = self.evaluator.multiply(ciph1, ciph2, self.relin_key)
@@ -103,13 +102,12 @@ class TestEvaluator(unittest.TestCase):
         check_complex_vector_approx_eq(plain_prod, decoded_prod, error=0.01)
 
     def run_test_secret_key_multiply(self, message1, message2):
-        poly1 = Polynomial(self.degree // 2, message1)
-        poly2 = Polynomial(self.degree // 2, message2)
+        num_slots = len(message1)
         plain1 = self.encoder.encode(message1, self.scaling_factor)
         plain2 = self.encoder.encode(message2, self.scaling_factor)
-        plain_prod = [0] * poly1.ring_degree
-        for i in range(poly1.ring_degree):
-            plain_prod[i] = (poly1.coeffs[i] * poly2.coeffs[i])
+        plain_prod = [0] * num_slots
+        for i in range(num_slots):
+            plain_prod[i] = message1[i] * message2[i]
         ciph1 = self.encryptor.encrypt_with_secret_key(plain1)
         ciph2 = self.encryptor.encrypt_with_secret_key(plain2)
         ciph_prod = self.evaluator.multiply(ciph1, ciph2, self.relin_key)
