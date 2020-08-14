@@ -6,16 +6,13 @@ from bfv.bfv_encryptor import BFVEncryptor
 from bfv.bfv_evaluator import BFVEvaluator
 from bfv.bfv_key_generator import BFVKeyGenerator
 from bfv.bfv_parameters import BFVParameters
-from util.plaintext import Plaintext
-from util.polynomial import Polynomial
-from util.random_sample import sample_uniform
 
 def main():
 
     degree = 8
-    plain_modulus = 256
     # Ciphertext modulus is a prime congruent to 1 (mod 16).
-    ciph_modulus = 590872612825179551336102196593
+    plain_modulus = 17
+    ciph_modulus = 800
     params = BFVParameters(poly_degree=degree,
                            plain_modulus=plain_modulus,
                            ciph_modulus=ciph_modulus)
@@ -28,7 +25,7 @@ def main():
     decryptor = BFVDecryptor(params, secret_key)
     evaluator = BFVEvaluator(params)
 
-    message1 = [0, 5, 8, 2, 70, 100, 4, 5]
+    message1 = [0, 5, 8, 2, 5, 16, 4, 5]
     message2 = [1, 2, 3, 4, 5, 6, 7, 8]
 
     plain1 = encoder.encode(message1)
