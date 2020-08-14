@@ -1,4 +1,10 @@
-"""Time how long multiplication and bootstrapping take."""
+"""Time how long multiplication and bootstrapping take.
+
+Need to run test with a command line argument with for the polynomial degree.
+For multiplication with polynomial degree 16, run
+python3 run_ckks_performance.py TestMultiply 16
+For bootstrapping with polynomial degree 32, run
+python3 run_ckks_performance.py TestBootstrapping 32"""
 
 import os
 import sys

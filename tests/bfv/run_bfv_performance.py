@@ -1,4 +1,8 @@
-"""Time how long multiplication for BFV takes."""
+"""Time how long multiplication for BFV takes.
+
+Need to run test with a command line argument for the polynomial degree.
+For multiplication with polynomial degree 16, run
+python3 run_bfv_performance.py TestMultiply 16"""
 
 import os
 import sys
