@@ -10,5 +10,5 @@ setup(
         'sympy',
         'pytest',
     ],
-    packages=find_packages()
+    packages=['bfv', 'ckks', 'tests', 'util']
 )
