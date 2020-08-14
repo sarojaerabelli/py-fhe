@@ -32,9 +32,7 @@ class BatchEncoder:
             params (Parameters): Parameters including polynomial degree,
                 plaintext modulus, and ciphertext modulus.
         """
-        print("hello")
         self.degree = params.poly_degree
-        print(degree)
         self.plain_modulus = params.plain_modulus
         self.ntt = NTTContext(params.poly_degree, params.plain_modulus)  
 
@@ -50,7 +48,6 @@ class BatchEncoder:
         Returns:
             A Plaintext object which represents the encoded value.
         """
-        print("HELLLO")
         assert len(values) == self.degree, 'Length of list does not equal \
             polynomial degree.'
         coeffs = self.ntt.ftt_inv(values)
@@ -67,7 +64,5 @@ class BatchEncoder:
         Returns:
             A decoded list of integers.
         """
-        print("HELLO")
         result = self.ntt.ftt_fwd(plain.poly.coeffs)
-        print("plain modulus: " + self.plain_modulus)
         return [val % self.plain_modulus for val in result]

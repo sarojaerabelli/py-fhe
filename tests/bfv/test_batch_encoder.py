@@ -27,7 +27,7 @@ class TestBatchEncoder(unittest.TestCase):
         self.assertEqual(value, inp)
 
     def run_test_encode_multiply(self, inp1, inp2):
-        prod = [inp1[i] * inp2[i] for i in range(len(inp1))]
+        prod = [(inp1[i] * inp2[i]) % self.plain_modulus for i in range(len(inp1))]
         plain1 = self.encoder.encode(inp1)
         print(plain1)
         plain2 = self.encoder.encode(inp2)
