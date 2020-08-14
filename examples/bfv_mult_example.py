@@ -12,7 +12,7 @@ def main():
     degree = 8
     # Ciphertext modulus is a prime congruent to 1 (mod 16).
     plain_modulus = 17
-    ciph_modulus = 800
+    ciph_modulus = 8000000000000
     params = BFVParameters(poly_degree=degree,
                            plain_modulus=plain_modulus,
                            ciph_modulus=ciph_modulus)
