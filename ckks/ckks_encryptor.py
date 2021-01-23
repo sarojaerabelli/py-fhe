@@ -1,6 +1,7 @@
 """A module to encrypt for the CKKS scheme."""
 
 from util.ciphertext import Ciphertext
+from util.dcrt_polynomial import DCRTPolynomial
 from util.polynomial import Polynomial
 from util.random_sample import sample_triangle
 
@@ -48,10 +49,14 @@ class CKKSEncryptor:
         assert self.secret_key != None, 'Secret key does not exist'
 
         sk = self.secret_key.s
-        random_vec = Polynomial(self.poly_degree, sample_triangle(self.poly_degree))
-        error = Polynomial(self.poly_degree, sample_triangle(self.poly_degree))
+        if self.crt_context:
+            random_vec = DCRTPolynomial(self.poly_degree, sample_triangle(self.poly_degree), self.crt_context)
+            error = DCRTPolynomial(self.poly_degree, sample_triangle(self.poly_degree), self.crt_context)
+        else:
+            random_vec = Polynomial(self.poly_degree, sample_triangle(self.poly_degree))
+            error = Polynomial(self.poly_degree, sample_triangle(self.poly_degree))
 
-        c0 = sk.multiply(random_vec, self.coeff_modulus, crt=self.crt_context)
+        c0 = sk.multiply(random_vec, self.coeff_modulus)
         c0 = error.add(c0, self.coeff_modulus)
         c0 = c0.add(plain.poly, self.coeff_modulus)
         c0 = c0.mod_small(self.coeff_modulus)
@@ -76,16 +81,21 @@ class CKKSEncryptor:
         p0 = self.public_key.p0
         p1 = self.public_key.p1
         
-        random_vec = Polynomial(self.poly_degree, sample_triangle(self.poly_degree))
-        error1 = Polynomial(self.poly_degree, sample_triangle(self.poly_degree))
-        error2 = Polynomial(self.poly_degree, sample_triangle(self.poly_degree))
+        if self.crt_context:
+            random_vec = DCRTPolynomial(self.poly_degree, sample_triangle(self.poly_degree), self.crt_context)
+            error1 = DCRTPolynomial(self.poly_degree, sample_triangle(self.poly_degree), self.crt_context)
+            error2 = DCRTPolynomial(self.poly_degree, sample_triangle(self.poly_degree), self.crt_context)
+        else:
+            random_vec = Polynomial(self.poly_degree, sample_triangle(self.poly_degree))
+            error1 = Polynomial(self.poly_degree, sample_triangle(self.poly_degree))
+            error2 = Polynomial(self.poly_degree, sample_triangle(self.poly_degree))
 
-        c0 = p0.multiply(random_vec, self.coeff_modulus, crt=self.crt_context)
+        c0 = p0.multiply(random_vec, self.coeff_modulus)
         c0 = error1.add(c0, self.coeff_modulus)
         c0 = c0.add(plain.poly, self.coeff_modulus)
         c0 = c0.mod_small(self.coeff_modulus)
 
-        c1 = p1.multiply(random_vec, self.coeff_modulus, crt=self.crt_context)
+        c1 = p1.multiply(random_vec, self.coeff_modulus)
         c1 = error2.add(c1, self.coeff_modulus)
         c1 = c1.mod_small(self.coeff_modulus)
 

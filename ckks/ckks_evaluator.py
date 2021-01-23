@@ -6,6 +6,7 @@ import math
 from ckks.ckks_bootstrapping_context import CKKSBootstrappingContext
 from util.ciphertext import Ciphertext
 from util.crt import CRTContext
+from util.dcrt_polynomial import DCRTPolynomial
 import util.matrix_operations
 from util.plaintext import Plaintext
 from util.polynomial import Polynomial
@@ -22,6 +23,7 @@ class CKKSEvaluator:
             ring R_q.
         scaling_factor (float): Scaling factor to encode new plaintexts with.
         boot_context (CKKSBootstrappingContext): Bootstrapping pre-computations.
+        rns (Boolean): True, if using the RNS representation, otherwise False.
         crt_context (CRTContext): CRT functions.
     """
 
@@ -36,6 +38,7 @@ class CKKSEvaluator:
         self.big_modulus = params.big_modulus
         self.scaling_factor = params.scaling_factor
         self.boot_context = CKKSBootstrappingContext(params)
+        self.rns = params.rns
         self.crt_context = params.crt_context
 
     def add(self, ciph1, ciph2):
@@ -140,15 +143,15 @@ class CKKSEvaluator:
 
         modulus = ciph1.modulus
 
-        c0 = ciph1.c0.multiply(ciph2.c0, modulus, crt=self.crt_context)
+        c0 = ciph1.c0.multiply(ciph2.c0, modulus)
         c0 = c0.mod_small(modulus)
 
-        c1 = ciph1.c0.multiply(ciph2.c1, modulus, crt=self.crt_context)
-        temp = ciph1.c1.multiply(ciph2.c0, modulus, crt=self.crt_context)
+        c1 = ciph1.c0.multiply(ciph2.c1, modulus)
+        temp = ciph1.c1.multiply(ciph2.c0, modulus)
         c1 = c1.add(temp, modulus)
         c1 = c1.mod_small(modulus)
 
-        c2 = ciph1.c1.multiply(ciph2.c1, modulus, crt=self.crt_context)
+        c2 = ciph1.c1.multiply(ciph2.c1, modulus)
         c2 = c2.mod_small(modulus)
 
         return self.relinearize(relin_key, c0, c1, c2, ciph1.scaling_factor * ciph2.scaling_factor,
@@ -169,10 +172,10 @@ class CKKSEvaluator:
         assert isinstance(ciph, Ciphertext)
         assert isinstance(plain, Plaintext)
 
-        c0 = ciph.c0.multiply(plain.poly, ciph.modulus, crt=self.crt_context)
+        c0 = ciph.c0.multiply(plain.poly, ciph.modulus)
         c0 = c0.mod_small(ciph.modulus)
 
-        c1 = ciph.c1.multiply(plain.poly, ciph.modulus, crt=self.crt_context)
+        c1 = ciph.c1.multiply(plain.poly, ciph.modulus)
         c1 = c1.mod_small(ciph.modulus)
 
         return Ciphertext(c0, c1, ciph.scaling_factor * plain.scaling_factor, ciph.modulus)
@@ -193,13 +196,13 @@ class CKKSEvaluator:
         Returns:
             A Ciphertext which has only two components.
         """
-        new_c0 = relin_key.p0.multiply(c2, modulus * self.big_modulus, crt=self.crt_context)
+        new_c0 = relin_key.p0.multiply(c2, modulus * self.big_modulus)
         new_c0 = new_c0.mod_small(modulus * self.big_modulus)
         new_c0 = new_c0.scalar_integer_divide(self.big_modulus)
         new_c0 = new_c0.add(c0, modulus)
         new_c0 = new_c0.mod_small(modulus)
 
-        new_c1 = relin_key.p1.multiply(c2, modulus * self.big_modulus, crt=self.crt_context)
+        new_c1 = relin_key.p1.multiply(c2, modulus * self.big_modulus)
         new_c1 = new_c1.mod_small(modulus * self.big_modulus)
         new_c1 = new_c1.scalar_integer_divide(self.big_modulus)
         new_c1 = new_c1.add(c1, modulus)
@@ -256,13 +259,13 @@ class CKKSEvaluator:
             A Ciphertext which encrypts the same message under a different key.
         """
 
-        c0 = key.p0.multiply(ciph.c1, ciph.modulus * self.big_modulus, crt=self.crt_context)
+        c0 = key.p0.multiply(ciph.c1, ciph.modulus * self.big_modulus)
         c0 = c0.mod_small(ciph.modulus * self.big_modulus)
         c0 = c0.scalar_integer_divide(self.big_modulus)
         c0 = c0.add(ciph.c0, ciph.modulus)
         c0 = c0.mod_small(ciph.modulus)
 
-        c1 = key.p1.multiply(ciph.c1, ciph.modulus * self.big_modulus, crt=self.crt_context)
+        c1 = key.p1.multiply(ciph.c1, ciph.modulus * self.big_modulus)
         c1 = c1.mod_small(ciph.modulus * self.big_modulus)
         c1 = c1.scalar_integer_divide(self.big_modulus)
         c1 = c1.mod_small(ciph.modulus)
@@ -403,7 +406,11 @@ class CKKSEvaluator:
         """
         plain_vec = [0] * (self.degree)
         plain_vec[0] = int(const * self.scaling_factor)
+        if self.rns:
+            return Plaintext(DCRTPolynomial(self.degree, plain_vec, self.crt_context),
+                             self.scaling_factor)
         return Plaintext(Polynomial(self.degree, plain_vec), self.scaling_factor)
+
 
     def create_complex_constant_plain(self, const, encoder):
         """Creates a plaintext containing a constant value.

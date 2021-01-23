@@ -1,5 +1,6 @@
 """A module to generate public and private keys for the CKKS scheme."""
 
+from util.dcrt_polynomial import DCRTPolynomial
 from util.polynomial import Polynomial
 from util.public_key import PublicKey
 from util.rotation_key import RotationKey
@@ -44,7 +45,11 @@ class CKKSKeyGenerator:
                 plaintext, and ciphertext modulus.
         """
         key = sample_hamming_weight_vector(params.poly_degree, params.hamming_weight)
-        self.secret_key = SecretKey(Polynomial(params.poly_degree, key))
+        if self.params.rns:
+            self.secret_key = SecretKey(DCRTPolynomial(params.poly_degree, key,
+                                                       self.params.crt_context))
+        else:
+            self.secret_key = SecretKey(Polynomial(params.poly_degree, key))
 
     def generate_public_key(self, params):
         """Generates a public key for CKKS scheme.
@@ -55,8 +60,15 @@ class CKKSKeyGenerator:
         """
         mod = self.params.big_modulus
 
-        pk_coeff = Polynomial(params.poly_degree, sample_uniform(0, mod, params.poly_degree))
-        pk_error = Polynomial(params.poly_degree, sample_triangle(params.poly_degree))
+        if self.params.rns:
+            pk_coeff = DCRTPolynomial(params.poly_degree,
+                                      sample_uniform(0, mod, params.poly_degree),
+                                      self.params.crt_context)
+            pk_error = DCRTPolynomial(params.poly_degree, sample_triangle(params.poly_degree),
+                                      self.params.crt_context)
+        else:
+            pk_coeff = Polynomial(params.poly_degree, sample_uniform(0, mod, params.poly_degree))
+            pk_error = Polynomial(params.poly_degree, sample_triangle(params.poly_degree))
         p0 = pk_coeff.multiply(self.secret_key.s, mod)
         p0 = p0.scalar_multiply(-1, mod)
         p0 = p0.add(pk_error, mod)
@@ -77,8 +89,18 @@ class CKKSKeyGenerator:
         mod = self.params.big_modulus
         mod_squared = mod ** 2
 
-        swk_coeff = Polynomial(self.params.poly_degree, sample_uniform(0, mod_squared, self.params.poly_degree))
-        swk_error = Polynomial(self.params.poly_degree, sample_triangle(self.params.poly_degree))
+        if self.params.rns:
+            swk_coeff = DCRTPolynomial(self.params.poly_degree,
+                                       sample_uniform(0, mod_squared, self.params.poly_degree),
+                                       self.params.crt_context)
+            swk_error = DCRTPolynomial(self.params.poly_degree,
+                                       sample_triangle(self.params.poly_degree),
+                                       self.params.crt_context)
+        else:
+            swk_coeff = Polynomial(self.params.poly_degree,
+                                   sample_uniform(0, mod_squared, self.params.poly_degree))
+            swk_error = Polynomial(self.params.poly_degree,
+                                   sample_triangle(self.params.poly_degree))
 
         sw0 = swk_coeff.multiply(self.secret_key.s, mod_squared)
         sw0 = sw0.scalar_multiply(-1, mod_squared)
@@ -95,7 +117,7 @@ class CKKSKeyGenerator:
             params (Parameters): Parameters including polynomial degree,
                 plaintext, and ciphertext modulus.
         """
-        sk_squared = self.secret_key.s.multiply(self.secret_key.s, self.params.big_modulus)
+        sk_squared = self.secret_key.s.multiply(self.secret_key.s, params.big_modulus)
         self.relin_key = self.generate_switching_key(sk_squared)
 
     def generate_rot_key(self, rotation):

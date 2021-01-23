@@ -356,14 +356,8 @@ class Polynomial:
         Returns:
             A Polynomial whose coefficients are modulo coeff_modulus.
         """
-        try:
-            new_coeffs = [c % coeff_modulus for c in self.coeffs]
-            new_coeffs = [c - coeff_modulus if c > coeff_modulus // 2 else c for c in new_coeffs]
-        except:
-            print(self.coeffs)
-            print(coeff_modulus)
-            new_coeffs = [c % coeff_modulus for c in self.coeffs]
-            new_coeffs = [c - coeff_modulus if c > coeff_modulus // 2 else c for c in new_coeffs]
+        new_coeffs = [c % coeff_modulus for c in self.coeffs]
+        new_coeffs = [c - coeff_modulus if c > coeff_modulus // 2 else c for c in new_coeffs]
         return Polynomial(self.ring_degree, new_coeffs)
 
     def base_decompose(self, base, num_levels):

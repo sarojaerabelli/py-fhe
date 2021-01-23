@@ -51,7 +51,7 @@ class CRTContext:
             self.primes[i] = possible_prime
 
     def generate_ntt_contexts(self):
-        """Generates NTTContexts for each primes.
+        """Generates NTTContexts for each prime.
         """
         self.ntts = []
         for prime in self.primes:
@@ -91,5 +91,7 @@ class CRTContext:
             intermed_val = (intermed_val * self.crt_vals[i]) % self.modulus
             regular_rep_val += intermed_val
             regular_rep_val %= self.modulus
+            if regular_rep_val > self.modulus // 2:
+                regular_rep_val -= self.modulus
 
         return regular_rep_val
