@@ -65,7 +65,7 @@ def sample_hamming_weight_vector(length, hamming_weight):
     while total_weight < hamming_weight:
         index = random.randrange(0, length)
         if sample[index] == 0:
-            r = random.randrange(0, 1)
+            r = random.randint(0, 1)
             if r == 0: sample[index] = -1
             else: sample[index] = 1
             total_weight += 1
